@@ -9,9 +9,13 @@ interface FilterContextType {
   categories: Category[];
   activeCategory: string;
   isFilterModalOpen: boolean;
+  isSearchExpanded: boolean;
+  activeSearchTab: "where" | "checkIn" | "checkOut" | "who" | null;
   setFilters: React.Dispatch<React.SetStateAction<SearchFilterState>>;
   setActiveCategory: (category: string) => void;
   setIsFilterModalOpen: (open: boolean) => void;
+  setIsSearchExpanded: (expanded: boolean) => void;
+  setActiveSearchTab: (tab: "where" | "checkIn" | "checkOut" | "who" | null) => void;
   resetFilters: () => void;
   updateFilter: <K extends keyof SearchFilterState>(key: K, value: SearchFilterState[K]) => void;
 }
@@ -22,6 +26,10 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState<boolean>(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState<boolean>(false);
+  const [activeSearchTab, setActiveSearchTab] = useState<
+    "where" | "checkIn" | "checkOut" | "who" | null
+  >(null);
   const [filters, setFilters] = useState<SearchFilterState>({
     category: "all",
     minPrice: undefined,
@@ -95,9 +103,13 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
         categories,
         activeCategory,
         isFilterModalOpen,
+        isSearchExpanded,
+        activeSearchTab,
         setFilters,
         setActiveCategory: handleCategorySelect,
         setIsFilterModalOpen,
+        setIsSearchExpanded,
+        setActiveSearchTab,
         resetFilters,
         updateFilter,
       }}

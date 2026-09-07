@@ -1,0 +1,1 @@
+export { ExpandedSearchBar } from "./ExpandedSearchBar";
