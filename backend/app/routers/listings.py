@@ -2,14 +2,31 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.models import Listing, Amenity
-from app.schemas.listing import ListingResponse, ListingDetailResponse
+from app.models import Listing, ListingImage, Amenity, User
+from app.schemas.listing import (
+    ListingResponse,
+    ListingDetailResponse,
+    ListingCreate,
+    ListingUpdate,
+)
 from app.schemas.amenity import AmenityResponse
 from app.schemas.category import CategoryItem
 from app.services.listing_service import search_listings
 from app.services.availability_service import get_booked_dates_for_listing
 
 router = APIRouter(tags=["Listings"])
+
+def get_current_host(db: Session = Depends(get_db)) -> User:
+    """
+    Returns the active demo host user (Marco Rossi).
+    In production, this would be derived from JWT token claims.
+    """
+    host = db.query(User).filter(User.email == "marco.rossi@example.com").first()
+    if not host:
+        host = db.query(User).filter(User.role.in_(["host", "both"])).first()
+    if not host:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active host user found.")
+    return host
 
 # Static metadata for Airbnb categories
 CATEGORIES_LIST: list[CategoryItem] = [
@@ -95,11 +112,141 @@ def get_listing_detail(listing_id: int, db: Session = Depends(get_db)):
             detail=f"Listing with id {listing_id} not found.",
         )
 
-    # Calculate booked dates for the calendar
     booked_dates = get_booked_dates_for_listing(db, listing_id)
-
-    # Validate into detailed Pydantic response
     detail_data = ListingDetailResponse.model_validate(listing)
     detail_data.booked_dates = booked_dates
 
     return detail_data
+
+# --- HOST CRUD OPERATIONS ---
+
+@router.post("/listings", response_model=ListingDetailResponse, status_code=status.HTTP_201_CREATED)
+def create_listing(
+    payload: ListingCreate,
+    db: Session = Depends(get_db),
+    current_host: User = Depends(get_current_host),
+):
+    """
+    Create a new listing as a host (Full Host CRUD).
+    """
+    new_listing = Listing(
+        host_id=current_host.id,
+        title=payload.title,
+        description=payload.description,
+        property_type=payload.property_type,
+        category=payload.category,
+        room_type=payload.room_type,
+        address=payload.address,
+        city=payload.city,
+        state=payload.state,
+        country=payload.country,
+        latitude=payload.latitude,
+        longitude=payload.longitude,
+        price_per_night=payload.price_per_night,
+        cleaning_fee=payload.cleaning_fee,
+        max_guests=payload.max_guests,
+        bedrooms=payload.bedrooms,
+        beds=payload.beds,
+        bathrooms=payload.bathrooms,
+        rating=5.0,  # New listing default
+        review_count=0,
+    )
+
+    # Attach amenities
+    if payload.amenity_ids:
+        amenities = db.query(Amenity).filter(Amenity.id.in_(payload.amenity_ids)).all()
+        new_listing.amenities = amenities
+
+    db.add(new_listing)
+    db.flush()
+
+    # Add images
+    if payload.image_urls:
+        for idx, url in enumerate(payload.image_urls):
+            img = ListingImage(
+                listing_id=new_listing.id,
+                image_url=url,
+                display_order=idx + 1,
+                is_cover=(idx == 0),
+            )
+            db.add(img)
+
+    db.commit()
+    db.refresh(new_listing)
+
+    detail_data = ListingDetailResponse.model_validate(new_listing)
+    detail_data.booked_dates = []
+    return detail_data
+
+@router.put("/listings/{listing_id}", response_model=ListingDetailResponse)
+def update_listing(
+    listing_id: int,
+    payload: ListingUpdate,
+    db: Session = Depends(get_db),
+    current_host: User = Depends(get_current_host),
+):
+    """
+    Update an existing listing (Full Host CRUD).
+    """
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found.")
+
+    if listing.host_id != current_host.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to modify this listing.",
+        )
+
+    # Update simple fields
+    update_data = payload.model_dump(exclude_unset=True, exclude={"amenity_ids", "image_urls"})
+    for field, val in update_data.items():
+        setattr(listing, field, val)
+
+    # Update amenities if provided
+    if payload.amenity_ids is not None:
+        amenities = db.query(Amenity).filter(Amenity.id.in_(payload.amenity_ids)).all()
+        listing.amenities = amenities
+
+    # Update images if provided
+    if payload.image_urls is not None:
+        db.query(ListingImage).filter(ListingImage.listing_id == listing.id).delete()
+        for idx, url in enumerate(payload.image_urls):
+            img = ListingImage(
+                listing_id=listing.id,
+                image_url=url,
+                display_order=idx + 1,
+                is_cover=(idx == 0),
+            )
+            db.add(img)
+
+    db.commit()
+    db.refresh(listing)
+
+    booked_dates = get_booked_dates_for_listing(db, listing.id)
+    detail_data = ListingDetailResponse.model_validate(listing)
+    detail_data.booked_dates = booked_dates
+    return detail_data
+
+@router.delete("/listings/{listing_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_listing(
+    listing_id: int,
+    db: Session = Depends(get_db),
+    current_host: User = Depends(get_current_host),
+):
+    """
+    Delete a listing (Full Host CRUD) with cascade cleanup.
+    """
+    listing = db.query(Listing).filter(Listing.id == listing_id).first()
+    if not listing:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found.")
+
+    if listing.host_id != current_host.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to delete this listing.",
+        )
+
+    db.delete(listing)
+    db.commit()
+    return None
