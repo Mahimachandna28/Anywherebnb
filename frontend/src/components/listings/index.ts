@@ -13,3 +13,5 @@ export { SleepingArrangements } from "./SleepingArrangements";
 export { ListingCalendar } from "./ListingCalendar";
 export { BookingWidget } from "./BookingWidget";
 export { ReviewsSection } from "./ReviewsSection";
+export { ListingMap } from "./ListingMap";
+export { ListingSubNav } from "./ListingSubNav";

@@ -17,6 +17,8 @@ import {
   ListingCalendar,
   BookingWidget,
   ReviewsSection,
+  ListingMap,
+  ListingSubNav,
 } from "@/components/listings";
 
 export default function ListingDetailPage() {
@@ -116,6 +118,9 @@ export default function ListingDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Sticky Sub-Navigation Header matching user screenshot */}
+      <ListingSubNav listing={listing} onReserveClick={scrollToCalendar} />
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20">
         {/* Breadcrumb / Back button */}
         <div className="mb-4">
@@ -192,9 +197,11 @@ export default function ListingDetailPage() {
               />
 
               {/* 3.5 Full Amenities with Modal */}
-              <AmenitiesSection
-                amenities={listing.amenities || []}
-              />
+              <div id="amenities-section">
+                <AmenitiesSection
+                  amenities={listing.amenities || []}
+                />
+              </div>
 
               {/* 3.6 Interactive 2-Month Availability Calendar */}
               <div ref={calendarRef}>
@@ -226,12 +233,17 @@ export default function ListingDetailPage() {
         </div>
 
         {/* 4. 6-Category Reviews Breakdown Section */}
-        <div className="mt-8">
+        <div className="mt-8" id="reviews-section">
           <ReviewsSection
             reviews={listing.reviews || []}
             rating={listing.rating}
             reviewCount={listing.review_count}
           />
+        </div>
+
+        {/* 5. Where you'll be - Interactive Map with Nearby Famous Places */}
+        <div className="mt-8">
+          <ListingMap listing={listing} />
         </div>
       </main>
 
