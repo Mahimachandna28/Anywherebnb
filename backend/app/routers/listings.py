@@ -73,7 +73,7 @@ def get_listings(
     """
     Search and filter listings across multiple criteria with pagination.
     """
-    listings, total_count = search_listings(
+    listings, total_count, is_nearby, search_location, message = search_listings(
         db=db,
         destination=destination,
         category=category,
@@ -95,6 +95,9 @@ def get_listings(
     return {
         "items": items,
         "total": total_count,
+        "is_nearby": is_nearby,
+        "search_location": search_location,
+        "message": message,
         "skip": skip,
         "limit": limit,
     }

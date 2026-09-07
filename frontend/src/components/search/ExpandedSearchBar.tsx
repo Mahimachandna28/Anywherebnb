@@ -8,14 +8,16 @@ import { format, addDays } from "date-fns";
 
 const POPULAR_DESTINATIONS = [
   { city: "Anywhere", country: "I'm flexible", icon: Compass },
-  { city: "Goa", country: "India", icon: MapPin },
-  { city: "Jaipur", country: "Rajasthan", icon: MapPin },
-  { city: "Manali", country: "Himachal Pradesh", icon: MapPin },
-  { city: "Udaipur", country: "Rajasthan", icon: MapPin },
-  { city: "Rishikesh", country: "Uttarakhand", icon: MapPin },
-  { city: "Mumbai", country: "Maharashtra", icon: MapPin },
-  { city: "Munnar", country: "Kerala", icon: MapPin },
-  { city: "Varanasi", country: "Uttar Pradesh", icon: MapPin },
+  { city: "Goa", country: "Candolim / Coastal", icon: MapPin },
+  { city: "Mumbai", country: "Bandra / Marine Drive", icon: MapPin },
+  { city: "Delhi", country: "Connaught Place / Lutyens", icon: MapPin },
+  { city: "Jaipur", country: "Amer / Heritage", icon: MapPin },
+  { city: "Manali", country: "Solang Valley / Mountains", icon: MapPin },
+  { city: "Udaipur", country: "Lake Pichola / Haveli", icon: MapPin },
+  { city: "Bengaluru", country: "Indiranagar / Garden City", icon: MapPin },
+  { city: "Rishikesh", country: "Tapovan / Ganga Bliss", icon: MapPin },
+  { city: "Munnar", country: "Tea Gardens / Kerala", icon: MapPin },
+  { city: "Varanasi", country: "Assi Ghat / Holy Ganges", icon: MapPin },
 ];
 
 export function ExpandedSearchBar() {
@@ -69,7 +71,7 @@ export function ExpandedSearchBar() {
     if (dest.city === "Anywhere") {
       setDestinationInput("");
     } else {
-      setDestinationInput(`${dest.city}, ${dest.country}`);
+      setDestinationInput(dest.city);
     }
     setActiveSearchTab("checkIn");
   };

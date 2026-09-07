@@ -12,6 +12,11 @@ export default function HomePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isNearby, setIsNearby] = useState<boolean>(false);
+  const [searchFeedback, setSearchFeedback] = useState<{
+    location: string | null;
+    message: string | null;
+  }>({ location: null, message: null });
 
   const fetchListings = useCallback(async () => {
     setIsLoading(true);
@@ -68,11 +73,19 @@ export default function HomePage() {
       const data = await fetchApi<{
         items: Listing[];
         total: number;
+        is_nearby?: boolean;
+        search_location?: string | null;
+        message?: string | null;
         skip: number;
         limit: number;
       }>(endpoint);
 
       setListings(data.items || []);
+      setIsNearby(Boolean(data.is_nearby));
+      setSearchFeedback({
+        location: data.search_location || null,
+        message: data.message || null,
+      });
     } catch (err) {
       console.error("Failed to load listings:", err);
       setError("Failed to load listings. Please make sure the backend server is running.");
@@ -93,6 +106,44 @@ export default function HomePage() {
 
       {/* 2. Main Explore Listings Feed */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+        {/* Nearby / Proximity Notice Banner */}
+        {isNearby && searchFeedback.location && !isLoading && (
+          <div className="mb-6 p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex items-center justify-between gap-4 animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <span className="text-sm">📍</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-amber-900">
+                  Showing stays near &ldquo;{searchFeedback.location}&rdquo;
+                </p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  We found {listings.length} {listings.length === 1 ? "stay" : "stays"} nearby within accessible distance.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-xs font-semibold px-3.5 py-1.5 rounded-xl bg-white border border-amber-200 text-amber-900 hover:bg-amber-100/50 transition shrink-0"
+            >
+              Clear search
+            </button>
+          </div>
+        )}
+
+        {/* Destination Result Heading */}
+        {filters.destination && !isNearby && !isLoading && listings.length > 0 && (
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-neutral-900">
+              Stays in &ldquo;{filters.destination}&rdquo;
+            </h1>
+            <span className="text-sm text-neutral-500 font-medium">
+              {listings.length} {listings.length === 1 ? "stay" : "stays"} found
+            </span>
+          </div>
+        )}
+
         {error ? (
           <div className="py-16 text-center">
             <p className="text-red-500 font-medium mb-3">{error}</p>

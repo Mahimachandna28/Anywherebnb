@@ -92,18 +92,33 @@ def test_search_listings_filters():
     db = SessionLocal()
     try:
         # Search Beachfront
-        beach_listings, total = search_listings(db, category="Beachfront")
+        beach_listings, total, is_nearby, _, _ = search_listings(db, category="Beachfront")
         assert total > 0
         for l in beach_listings:
             assert l.category == "Beachfront"
 
         # Search destination: "Jaipur"
-        jaipur_listings, total_jaipur = search_listings(db, destination="Jaipur")
+        jaipur_listings, total_jaipur, _, _, _ = search_listings(db, destination="Jaipur")
         assert total_jaipur >= 1
         assert any("Jaipur" in l.city for l in jaipur_listings)
 
+        # Search locality: "Bandra" -> matches Mumbai
+        bandra_listings, total_bandra, _, _, _ = search_listings(db, destination="Bandra")
+        assert total_bandra >= 1
+        assert any("Mumbai" in l.city for l in bandra_listings)
+
+        # Search landmark: "Connaught Place" -> matches Delhi
+        cp_listings, total_cp, _, _, _ = search_listings(db, destination="Connaught Place")
+        assert total_cp >= 1
+        assert any("Delhi" in l.city for l in cp_listings)
+
+        # Search proximity fallback: "Agra" -> triggers nearby fallback
+        agra_listings, total_agra, is_nearby_agra, _, msg = search_listings(db, destination="Agra")
+        assert total_agra > 0
+        assert is_nearby_agra is True
+
         # Search price cap: max ₹8,000
-        budget_listings, _ = search_listings(db, max_price=8000)
+        budget_listings, _, _, _, _ = search_listings(db, max_price=8000)
         for l in budget_listings:
             assert l.price_per_night <= 8000
     finally:

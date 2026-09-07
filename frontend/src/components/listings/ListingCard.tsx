@@ -153,7 +153,16 @@ export function ListingCard({ listing, priority = false }: ListingCardProps) {
         {/* Location & Star Rating */}
         <div className="flex justify-between items-start gap-2">
           <span className="font-semibold text-neutral-900 truncate leading-snug">
-            {listing.city}, {listing.country}
+            {(() => {
+              const parts = (listing.address || "").split(",").map((s) => s.trim());
+              if (parts.length > 1) {
+                const locality = parts[parts.length - 1];
+                if (locality && locality.toLowerCase() !== listing.city.toLowerCase()) {
+                  return `${locality}, ${listing.city}`;
+                }
+              }
+              return `${listing.city}, ${listing.state || listing.country}`;
+            })()}
           </span>
           <div className="flex items-center gap-1 shrink-0 text-sm font-normal text-neutral-900">
             <Star className="w-3.5 h-3.5 fill-current text-neutral-900" />

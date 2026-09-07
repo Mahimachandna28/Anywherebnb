@@ -9,7 +9,12 @@ interface UserContextType {
   currentRole: UserRole;
   allUsers: User[];
   isLoading: boolean;
+  isLoggedIn: boolean;
+  isAuthModalOpen: boolean;
+  setIsAuthModalOpen: (open: boolean) => void;
   switchUser: (userId: number) => void;
+  loginUser: (user: User) => void;
+  logoutUser: () => void;
   toggleRole: () => void;
 }
 
@@ -20,6 +25,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [currentRole, setCurrentRole] = useState<UserRole>("guest");
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadUsers() {
@@ -58,7 +65,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (target) {
       setCurrentUser(target);
       setCurrentRole(target.role === "host" ? "host" : "guest");
+      setIsLoggedIn(true);
     }
+  };
+
+  const loginUser = (user: User) => {
+    setCurrentUser(user);
+    setCurrentRole(user.role === "host" ? "host" : "guest");
+    setIsLoggedIn(true);
+    setIsAuthModalOpen(false);
+  };
+
+  const logoutUser = () => {
+    setIsLoggedIn(false);
   };
 
   const toggleRole = () => {
@@ -86,7 +105,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         currentRole,
         allUsers,
         isLoading,
+        isLoggedIn,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
         switchUser,
+        loginUser,
+        logoutUser,
         toggleRole,
       }}
     >

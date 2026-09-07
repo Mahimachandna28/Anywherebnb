@@ -48,6 +48,30 @@ def test_filter_listings_by_destination():
     for item in data["items"]:
         assert "Goa" in item["city"] or "Goa" in item["title"]
 
+def test_filter_listings_by_locality_and_landmark():
+    # Locality search: Bandra -> Mumbai
+    res_bandra = client.get("/api/listings?destination=Bandra")
+    assert res_bandra.status_code == 200
+    assert res_bandra.json()["total"] >= 1
+    assert any("Mumbai" in i["city"] for i in res_bandra.json()["items"])
+
+    # Landmark search: Connaught Place -> Delhi
+    res_cp = client.get("/api/listings?destination=Connaught Place")
+    assert res_cp.status_code == 200
+    assert res_cp.json()["total"] >= 1
+    assert any("Delhi" in i["city"] for i in res_cp.json()["items"])
+
+    # Composite query: "Goa, India"
+    res_goa_in = client.get("/api/listings?destination=Goa, India")
+    assert res_goa_in.status_code == 200
+    assert res_goa_in.json()["total"] >= 1
+
+    # Proximity fallback: "Agra"
+    res_agra = client.get("/api/listings?destination=Agra")
+    assert res_agra.status_code == 200
+    assert res_agra.json()["total"] > 0
+    assert res_agra.json()["is_nearby"] is True
+
 def test_filter_listings_by_category():
     response = client.get("/api/listings?category=Beachfront")
     assert response.status_code == 200
