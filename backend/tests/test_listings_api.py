@@ -41,12 +41,12 @@ def test_get_listings():
     assert len(first["images"]) > 0
 
 def test_filter_listings_by_destination():
-    response = client.get("/api/listings?destination=Positano")
+    response = client.get("/api/listings?destination=Goa")
     assert response.status_code == 200
     data = response.json()
     assert data["total"] >= 1
     for item in data["items"]:
-        assert "Positano" in item["city"] or "Positano" in item["title"]
+        assert "Goa" in item["city"] or "Goa" in item["title"]
 
 def test_filter_listings_by_category():
     response = client.get("/api/listings?category=Beachfront")
@@ -77,12 +77,12 @@ def test_get_listing_detail_not_found():
     assert response.status_code == 404
 
 def test_filter_listings_by_price_range():
-    response = client.get("/api/listings?min_price=200&max_price=600")
+    response = client.get("/api/listings?min_price=6000&max_price=12000")
     assert response.status_code == 200
     data = response.json()
     assert "items" in data
     for item in data["items"]:
-        assert 200 <= item["price_per_night"] <= 600
+        assert 6000 <= item["price_per_night"] <= 12000
 
 def test_filter_listings_by_guests():
     response = client.get("/api/listings?guests=4")

@@ -16,9 +16,9 @@ def get_all_users(db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_current_user(email: str | None = None, db: Session = Depends(get_db)):
     """
-    Returns the currently active user profile by email or defaults to Alex Morgan (Guest).
+    Returns the currently active user profile by email or defaults to Aarav Patel (Guest).
     """
-    target_email = email or "alex.morgan@example.com"
+    target_email = email or "aarav.patel@example.com"
     user = db.query(User).filter(User.email == target_email).first()
     if not user:
         user = db.query(User).first()

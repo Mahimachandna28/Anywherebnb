@@ -97,14 +97,14 @@ def test_search_listings_filters():
         for l in beach_listings:
             assert l.category == "Beachfront"
 
-        # Search destination: "Kyoto"
-        kyoto_listings, total_kyoto = search_listings(db, destination="Kyoto")
-        assert total_kyoto >= 1
-        assert any("Kyoto" in l.city for l in kyoto_listings)
+        # Search destination: "Jaipur"
+        jaipur_listings, total_jaipur = search_listings(db, destination="Jaipur")
+        assert total_jaipur >= 1
+        assert any("Jaipur" in l.city for l in jaipur_listings)
 
-        # Search price cap: max $300
-        budget_listings, _ = search_listings(db, max_price=300)
+        # Search price cap: max ₹8,000
+        budget_listings, _ = search_listings(db, max_price=8000)
         for l in budget_listings:
-            assert l.price_per_night <= 300
+            assert l.price_per_night <= 8000
     finally:
         db.close()

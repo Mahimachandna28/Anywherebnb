@@ -1,12 +1,12 @@
 import { format, parseISO, differenceInDays } from "date-fns";
 
 /**
- * Formats a number as USD currency (e.g. $1,250).
+ * Formats a number as Indian Rupee (INR) currency (e.g. ₹1,250 or ₹1,25,000).
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
     maximumFractionDigits: 0,
   }).format(amount);
 }

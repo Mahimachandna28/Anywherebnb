@@ -18,10 +18,10 @@ router = APIRouter(tags=["Listings"])
 
 def get_current_host(db: Session = Depends(get_db)) -> User:
     """
-    Returns the active demo host user (Marco Rossi).
+    Returns the active demo host user (Rohan Mehta).
     In production, this would be derived from JWT token claims.
     """
-    host = db.query(User).filter(User.email == "marco.rossi@example.com").first()
+    host = db.query(User).filter(User.email == "rohan.mehta@example.com").first()
     if not host:
         host = db.query(User).filter(User.role.in_(["host", "both"])).first()
     if not host:
@@ -58,8 +58,8 @@ def get_listings(
     destination: str | None = Query(None, description="City, country, or keyword search"),
     category: str | None = Query(None, description="Listing category filter"),
     property_type: str | None = Query(None, description="House, Apartment, Villa, etc."),
-    min_price: int | None = Query(None, ge=0, description="Minimum price per night (USD)"),
-    max_price: int | None = Query(None, ge=0, description="Maximum price per night (USD)"),
+    min_price: int | None = Query(None, ge=0, description="Minimum price per night (INR)"),
+    max_price: int | None = Query(None, ge=0, description="Maximum price per night (INR)"),
     guests: int | None = Query(None, ge=1, description="Minimum guest capacity"),
     bedrooms: int | None = Query(None, ge=0, description="Minimum bedrooms"),
     bathrooms: float | None = Query(None, ge=0, description="Minimum bathrooms"),

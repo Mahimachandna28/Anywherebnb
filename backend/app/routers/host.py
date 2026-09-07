@@ -8,7 +8,7 @@ from app.schemas.listing import ListingResponse
 router = APIRouter(prefix="/host", tags=["Host"])
 
 def get_current_host(db: Session = Depends(get_db)) -> User:
-    host = db.query(User).filter(User.email == "marco.rossi@example.com").first()
+    host = db.query(User).filter(User.email == "rohan.mehta@example.com").first()
     if not host:
         host = db.query(User).filter(User.role.in_(["host", "both"])).first()
     if not host:

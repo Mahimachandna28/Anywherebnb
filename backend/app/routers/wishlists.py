@@ -8,7 +8,7 @@ from app.schemas.listing import ListingResponse
 router = APIRouter(prefix="/wishlists", tags=["Wishlists"])
 
 def get_current_user(db: Session = Depends(get_db)) -> User:
-    user = db.query(User).filter(User.email == "alex.morgan@example.com").first()
+    user = db.query(User).filter(User.email == "aarav.patel@example.com").first()
     if not user:
         user = db.query(User).first()
     return user

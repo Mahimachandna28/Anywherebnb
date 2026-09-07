@@ -8,14 +8,14 @@ import { format, addDays } from "date-fns";
 
 const POPULAR_DESTINATIONS = [
   { city: "Anywhere", country: "I'm flexible", icon: Compass },
-  { city: "Amalfi", country: "Italy", icon: MapPin },
-  { city: "Kyoto", country: "Japan", icon: MapPin },
-  { city: "Aspen", country: "United States", icon: MapPin },
-  { city: "Oia", country: "Greece", icon: MapPin },
-  { city: "Malibu", country: "United States", icon: MapPin },
-  { city: "Tulum", country: "Mexico", icon: MapPin },
-  { city: "Paris", country: "France", icon: MapPin },
-  { city: "Lake Tahoe", country: "United States", icon: MapPin },
+  { city: "Goa", country: "India", icon: MapPin },
+  { city: "Jaipur", country: "Rajasthan", icon: MapPin },
+  { city: "Manali", country: "Himachal Pradesh", icon: MapPin },
+  { city: "Udaipur", country: "Rajasthan", icon: MapPin },
+  { city: "Rishikesh", country: "Uttarakhand", icon: MapPin },
+  { city: "Mumbai", country: "Maharashtra", icon: MapPin },
+  { city: "Munnar", country: "Kerala", icon: MapPin },
+  { city: "Varanasi", country: "Uttar Pradesh", icon: MapPin },
 ];
 
 export function ExpandedSearchBar() {

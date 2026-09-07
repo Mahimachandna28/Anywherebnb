@@ -16,10 +16,10 @@ router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 def get_current_guest(db: Session = Depends(get_db)) -> User:
     """
-    Returns the active demo guest user (Alex Morgan).
+    Returns the active demo guest user (Aarav Patel).
     In a real app, this would decode a JWT or session cookie.
     """
-    guest = db.query(User).filter(User.email == "alex.morgan@example.com").first()
+    guest = db.query(User).filter(User.email == "aarav.patel@example.com").first()
     if not guest:
         guest = db.query(User).filter(User.role.in_(["guest", "both"])).first()
     if not guest:

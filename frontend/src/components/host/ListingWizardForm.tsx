@@ -13,7 +13,6 @@ import {
   Image as ImageIcon,
   Sparkles,
   MapPin,
-  DollarSign,
   Users,
   Bed,
   Bath,
@@ -65,7 +64,7 @@ const CATEGORIES = [
 // Curated photo bundles for 1-click photo population
 const SAMPLE_PHOTO_PRESETS = [
   {
-    name: "Modern Luxury Villa",
+    name: "Luxury Goa Beach Villa",
     photos: [
       "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
@@ -75,7 +74,7 @@ const SAMPLE_PHOTO_PRESETS = [
     ],
   },
   {
-    name: "Cozy Mountain Cabin",
+    name: "Cozy Manali Mountain Chalet",
     photos: [
       "https://images.unsplash.com/photo-1449158743715-0a90ebb6d2d8?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80",
@@ -85,7 +84,7 @@ const SAMPLE_PHOTO_PRESETS = [
     ],
   },
   {
-    name: "Beachfront Haven",
+    name: "Heritage Udaipur Lake Palace",
     photos: [
       "https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
@@ -127,14 +126,14 @@ export function ListingWizardForm({
   const [address, setAddress] = useState(initialData?.address || "");
   const [city, setCity] = useState(initialData?.city || "");
   const [state, setState] = useState(initialData?.state || "");
-  const [country, setCountry] = useState(initialData?.country || "United States");
+  const [country, setCountry] = useState(initialData?.country || "India");
 
   // Capacity & Pricing
   const [pricePerNight, setPricePerNight] = useState<number>(
-    initialData?.price_per_night || 150
+    initialData?.price_per_night || 4500
   );
   const [cleaningFee, setCleaningFee] = useState<number>(
-    initialData?.cleaning_fee || 50
+    initialData?.cleaning_fee || 800
   );
   const [maxGuests, setMaxGuests] = useState<number>(initialData?.max_guests || 4);
   const [bedrooms, setBedrooms] = useState<number>(initialData?.bedrooms || 2);
@@ -192,7 +191,7 @@ export function ListingWizardForm({
       }
     } else if (currentStep === 4) {
       if (pricePerNight <= 0) {
-        setGeneralError("Price per night must be greater than $0.");
+        setGeneralError("Price per night must be greater than ₹0.");
         return false;
       }
       if (maxGuests <= 0 || beds <= 0 || bathrooms <= 0) {
@@ -466,7 +465,7 @@ export function ListingWizardForm({
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="e.g. 120 Ocean View Drive"
+                    placeholder="e.g. Plot 42, Aguada Siolim Road"
                     className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-sm font-medium text-neutral-900 focus:outline-none focus:border-neutral-900"
                   />
                 </div>
@@ -480,7 +479,7 @@ export function ListingWizardForm({
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="e.g. Malibu"
+                      placeholder="e.g. Candolim"
                       className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-sm font-medium text-neutral-900 focus:outline-none focus:border-neutral-900"
                     />
                   </div>
@@ -493,7 +492,7 @@ export function ListingWizardForm({
                       type="text"
                       value={state}
                       onChange={(e) => setState(e.target.value)}
-                      placeholder="e.g. California"
+                      placeholder="e.g. Goa"
                       className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-sm font-medium text-neutral-900 focus:outline-none focus:border-neutral-900"
                     />
                   </div>
@@ -507,7 +506,7 @@ export function ListingWizardForm({
                     type="text"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    placeholder="e.g. United States"
+                    placeholder="e.g. India"
                     className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-sm font-medium text-neutral-900 focus:outline-none focus:border-neutral-900"
                   />
                 </div>
@@ -542,7 +541,7 @@ export function ListingWizardForm({
                     maxLength={200}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Architectural Cliffside Villa with Heated Pool"
+                    placeholder="e.g. Luxury Beachfront Villa with Private Pool in North Goa"
                     className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-sm font-medium text-neutral-900 focus:outline-none focus:border-neutral-900"
                   />
                 </div>
@@ -691,10 +690,10 @@ export function ListingWizardForm({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
                 <div>
                   <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                    Nightly Base Rate (USD) *
+                    Nightly Base Rate (₹ INR) *
                   </label>
                   <div className="relative">
-                    <DollarSign className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <span className="text-xs font-bold text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2">₹</span>
                     <input
                       type="number"
                       min={1}
@@ -707,10 +706,10 @@ export function ListingWizardForm({
 
                 <div>
                   <label className="block text-xs font-semibold text-neutral-700 mb-1">
-                    Cleaning Fee (USD)
+                    Cleaning Fee (₹ INR)
                   </label>
                   <div className="relative">
-                    <DollarSign className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <span className="text-xs font-bold text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2">₹</span>
                     <input
                       type="number"
                       min={0}

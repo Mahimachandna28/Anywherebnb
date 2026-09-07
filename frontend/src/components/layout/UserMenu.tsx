@@ -45,7 +45,7 @@ export function UserMenu() {
       {/* Language / Currency Globe */}
       <button
         className="p-2.5 rounded-full hover:bg-airbnb-lightGray transition duration-150 text-airbnb-dark"
-        title="Choose language and currency (Demo: USD)"
+        title="Choose language and currency (Demo: INR)"
         type="button"
       >
         <Globe className="h-4 w-4" />

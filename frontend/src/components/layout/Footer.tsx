@@ -72,10 +72,10 @@ export function Footer() {
           <div className="flex items-center gap-6 font-semibold text-airbnb-dark">
             <button className="flex items-center gap-2 hover:underline">
               <Globe className="h-4 w-4" />
-              <span>English (US)</span>
+              <span>English (IN)</span>
             </button>
             <button className="hover:underline">
-              <span>$ USD</span>
+              <span>₹ INR</span>
             </button>
           </div>
         </div>

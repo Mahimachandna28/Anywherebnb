@@ -28,19 +28,19 @@ def test_host_listings_retrieval():
 def test_host_crud_lifecycle():
     # 1. CREATE a new listing
     create_payload = {
-        "title": "Brand New Alpine Glass Cabin",
-        "description": "Unique secluded mountain retreat with glass ceilings for stargazing.",
+        "title": "Brand New Himalayan Pine Chalet",
+        "description": "Unique secluded mountain retreat with glass ceilings for stargazing in Manali.",
         "property_type": "Cabin",
         "category": "Cabins",
         "room_type": "Entire place",
-        "address": "Mountain Pass 44",
-        "city": "Innsbruck",
-        "state": "Tyrol",
-        "country": "Austria",
-        "latitude": 47.2692,
-        "longitude": 11.4041,
-        "price_per_night": 320,
-        "cleaning_fee": 75,
+        "address": "Solang Valley Ridge 44",
+        "city": "Manali",
+        "state": "Himachal Pradesh",
+        "country": "India",
+        "latitude": 32.2432,
+        "longitude": 77.1892,
+        "price_per_night": 8500,
+        "cleaning_fee": 1200,
         "max_guests": 4,
         "bedrooms": 2,
         "beds": 2,
@@ -56,8 +56,8 @@ def test_host_crud_lifecycle():
     assert res_create.status_code == 201
     created = res_create.json()
     listing_id = created["id"]
-    assert created["title"] == "Brand New Alpine Glass Cabin"
-    assert created["city"] == "Innsbruck"
+    assert created["title"] == "Brand New Himalayan Pine Chalet"
+    assert created["city"] == "Manali"
     assert len(created["images"]) == 2
 
     # 2. READ newly created listing
@@ -67,14 +67,14 @@ def test_host_crud_lifecycle():
 
     # 3. UPDATE the listing
     update_payload = {
-        "title": "Updated Alpine Glass Cabin (Renovated)",
-        "price_per_night": 350,
-        "cleaning_fee": 90,
+        "title": "Updated Himalayan Pine Chalet (Renovated)",
+        "price_per_night": 9200,
+        "cleaning_fee": 1400,
     }
     res_update = client.put(f"/api/listings/{listing_id}", json=update_payload)
     assert res_update.status_code == 200
-    assert res_update.json()["title"] == "Updated Alpine Glass Cabin (Renovated)"
-    assert res_update.json()["price_per_night"] == 350
+    assert res_update.json()["title"] == "Updated Himalayan Pine Chalet (Renovated)"
+    assert res_update.json()["price_per_night"] == 9200
 
     # 4. DELETE the listing
     res_del = client.delete(f"/api/listings/{listing_id}")

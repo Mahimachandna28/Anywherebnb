@@ -27,8 +27,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const users = await fetchApi<User[]>("/users");
         setAllUsers(users);
         
-        // Default to Alex Morgan (Guest) or first user
-        const defaultGuest = users.find((u) => u.email === "alex.morgan@example.com") || users[0];
+        // Default to Aarav Patel (Guest) or first user
+        const defaultGuest = users.find((u) => u.email === "aarav.patel@example.com") || users[0];
         if (defaultGuest) {
           setCurrentUser(defaultGuest);
           setCurrentRole("guest");
@@ -38,9 +38,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         // Fallback demo user if backend is momentarily unreachable
         setCurrentUser({
           id: 1,
-          name: "Alex Morgan",
-          email: "alex.morgan@example.com",
-          avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+          name: "Aarav Patel",
+          email: "aarav.patel@example.com",
+          avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
           is_superhost: false,
           role: "guest",
           joined_date: new Date().toISOString(),

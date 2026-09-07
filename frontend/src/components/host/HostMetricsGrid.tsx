@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { DollarSign, Home, CalendarCheck, Star } from "lucide-react";
+import { IndianRupee, Home, CalendarCheck, Star } from "lucide-react";
 import { HostMetrics } from "@/types";
 import { formatCurrency, formatRating } from "@/lib/formatters";
 
@@ -15,7 +15,7 @@ export function HostMetricsGrid({ metrics }: HostMetricsGridProps) {
       title: "Total Revenue",
       value: formatCurrency(metrics.total_revenue),
       subtext: "Gross confirmed earnings",
-      icon: DollarSign,
+      icon: IndianRupee,
       iconColor: "text-emerald-600 bg-emerald-50 border-emerald-100",
     },
     {

@@ -510,7 +510,7 @@ function CheckoutContent() {
                     </div>
 
                     <div className="border-t border-neutral-200 pt-4 flex justify-between font-bold text-neutral-900 text-base">
-                      <span>Total (USD)</span>
+                      <span>Total (INR)</span>
                       <span>{formatCurrency(pricing.totalPrice)}</span>
                     </div>
                   </div>
