@@ -15,8 +15,8 @@
 ## 🌐 Live Deployments
 
 - **Frontend (Vercel)**: [https://anywherebnb.vercel.app](https://anywherebnb.vercel.app)
-- **Backend API (Render)**: [https://anywherebnb.onrender.com/api](https://anywherebnb.onrender.com/api)
-- **Interactive Swagger Docs**: [https://anywherebnb.onrender.com/api/docs](https://anywherebnb.onrender.com/api/docs)
+- **Backend API (Render)**: [https://anywherebnb-backend.onrender.com/api](https://anywherebnb-backend.onrender.com/api)
+- **Interactive Swagger Docs**: [https://anywherebnb-backend.onrender.com/api/docs](https://anywherebnb-backend.onrender.com/api/docs)
 - **GitHub Repository**: [https://github.com/Mahimachandna28/Anywherebnb](https://github.com/Mahimachandna28/Anywherebnb)
 
 ---
