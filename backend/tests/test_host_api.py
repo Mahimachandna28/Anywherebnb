@@ -24,6 +24,7 @@ def test_host_listings_retrieval():
     for l in data:
         assert "title" in l
         assert "price_per_night" in l
+        assert "bookings_count" in l
 
 def test_host_crud_lifecycle():
     # 1. CREATE a new listing

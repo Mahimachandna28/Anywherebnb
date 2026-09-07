@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ArrowLeft } from "lucide-react";
 import { Listing } from "@/types";
@@ -19,21 +19,27 @@ import {
   ReviewsSection,
   ListingMap,
   ListingSubNav,
+  MobileReserveFooter,
 } from "@/components/listings";
 
 export default function ListingDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const listingId = Number(params?.id);
+
+  const initialCheckIn = searchParams.get("checkIn");
+  const initialCheckOut = searchParams.get("checkOut");
+  const initialGuests = Number(searchParams.get("guests")) || 1;
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Booking & Calendar State
-  const [checkIn, setCheckIn] = useState<string | null>(null);
-  const [checkOut, setCheckOut] = useState<string | null>(null);
-  const [guests, setGuests] = useState<number>(1);
+  // Booking & Calendar State (initialized from search parameters if provided)
+  const [checkIn, setCheckIn] = useState<string | null>(initialCheckIn || null);
+  const [checkOut, setCheckOut] = useState<string | null>(initialCheckOut || null);
+  const [guests, setGuests] = useState<number>(initialGuests);
   const calendarRef = useRef<HTMLDivElement>(null);
 
   const scrollToCalendar = () => {
@@ -255,6 +261,15 @@ export default function ListingDetailPage() {
         title={listing.title}
         initialIndex={photoModalIndex}
         listingId={listing.id}
+      />
+
+      {/* 6. Sticky Mobile Reservation Footer (Clean Airbnb style on small screens) */}
+      <MobileReserveFooter
+        listing={listing}
+        checkIn={checkIn}
+        checkOut={checkOut}
+        guests={guests}
+        onFocusCalendar={scrollToCalendar}
       />
     </div>
   );

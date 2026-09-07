@@ -15,3 +15,4 @@ export { BookingWidget } from "./BookingWidget";
 export { ReviewsSection } from "./ReviewsSection";
 export { ListingMap } from "./ListingMap";
 export { ListingSubNav } from "./ListingSubNav";
+export { MobileReserveFooter } from "./MobileReserveFooter";

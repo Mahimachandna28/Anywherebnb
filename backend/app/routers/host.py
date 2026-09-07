@@ -88,7 +88,7 @@ def get_host_listings(
     current_host: User = Depends(get_current_host),
 ):
     """
-    Returns all listings owned by the active host.
+    Returns all listings owned by the active host, including live bookings count per property.
     """
     listings = (
         db.query(Listing)
@@ -96,4 +96,16 @@ def get_host_listings(
         .order_by(Listing.created_at.desc())
         .all()
     )
-    return listings
+
+    result = []
+    for l in listings:
+        b_count = (
+            db.query(Booking)
+            .filter(Booking.listing_id == l.id, Booking.status == "confirmed")
+            .count()
+        )
+        item = ListingResponse.model_validate(l)
+        item.bookings_count = b_count
+        result.append(item)
+
+    return result

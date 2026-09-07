@@ -5,6 +5,7 @@ from app.schemas.user import UserResponse
 
 class BookingCreate(BaseModel):
     listing_id: int
+    guest_id: int | None = None
     check_in_date: date
     check_out_date: date
     total_guests: int = Field(1, gt=0)

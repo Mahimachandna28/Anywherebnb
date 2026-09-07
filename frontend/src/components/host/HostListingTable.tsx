@@ -14,6 +14,7 @@ import {
   Users,
   Bed,
   Home,
+  CalendarCheck,
 } from "lucide-react";
 import { Listing } from "@/types";
 import { formatCurrency, formatRating } from "@/lib/formatters";
@@ -194,14 +195,20 @@ export function HostListingTable({
                   </div>
                 </div>
 
-                {/* Right: Pricing & Actions */}
+                {/* Right: Pricing, Bookings Count & Actions */}
                 <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-neutral-100 gap-4">
-                  {/* Price */}
-                  <div className="text-left md:text-right">
-                    <span className="text-lg font-bold text-neutral-900">
-                      {formatCurrency(listing.price_per_night)}
-                    </span>
-                    <span className="text-xs text-neutral-500 font-normal"> / night</span>
+                  {/* Price & Bookings Count */}
+                  <div className="text-left md:text-right space-y-1">
+                    <div>
+                      <span className="text-lg font-bold text-neutral-900">
+                        {formatCurrency(listing.price_per_night)}
+                      </span>
+                      <span className="text-xs text-neutral-500 font-normal"> / night</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-neutral-100/90 border border-neutral-200 rounded-full text-xs font-semibold text-neutral-800">
+                      <CalendarCheck className="w-3 h-3 text-[#E00B41]" />
+                      <span>{listing.bookings_count ?? 0} bookings</span>
+                    </div>
                   </div>
 
                   {/* Action Buttons */}

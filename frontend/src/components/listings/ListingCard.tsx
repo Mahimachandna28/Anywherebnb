@@ -8,6 +8,7 @@ import { Listing } from "@/types";
 import { formatCurrency, formatRating } from "@/lib/formatters";
 import { useWishlist } from "@/context/WishlistContext";
 import { useUser } from "@/context/UserContext";
+import { useFilters } from "@/context/FilterContext";
 import { cn } from "@/lib/utils";
 
 interface ListingCardProps {
@@ -68,10 +69,20 @@ export function ListingCard({ listing, priority = false }: ListingCardProps) {
   };
 
   const isGuestFavorite = listing.rating >= 4.96 && listing.review_count >= 40;
+  const { filters } = useFilters();
+
+  const listingHref = useMemo(() => {
+    const qp = new URLSearchParams();
+    if (filters.checkIn) qp.set("checkIn", filters.checkIn);
+    if (filters.checkOut) qp.set("checkOut", filters.checkOut);
+    if (filters.guests) qp.set("guests", String(filters.guests));
+    const qs = qp.toString();
+    return `/listings/${listing.id}${qs ? `?${qs}` : ""}`;
+  }, [listing.id, filters.checkIn, filters.checkOut, filters.guests]);
 
   return (
     <Link
-      href={`/listings/${listing.id}`}
+      href={listingHref}
       className="group flex flex-col gap-2 cursor-pointer select-none"
     >
       {/* Photo Carousel Container */}

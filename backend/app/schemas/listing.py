@@ -79,6 +79,7 @@ class ListingResponse(BaseModel):
     bathrooms: float
     rating: float
     review_count: int
+    bookings_count: int = 0
     images: list[ListingImageResponse] = []
     amenities: list[AmenityResponse] = []
 

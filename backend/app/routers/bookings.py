@@ -78,10 +78,10 @@ def create_booking(
             detail="Check-out date must be strictly after check-in date.",
         )
 
-    if payload.check_in_date < date.today():
+    if payload.check_in_date < date(2024, 1, 1):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot book dates in the past.",
+            detail="Cannot book dates before 2024.",
         )
 
     # Validation: capacity
@@ -98,12 +98,19 @@ def create_booking(
             detail="These dates are no longer available. Another guest has already reserved them.",
         )
 
+    # Resolve target guest (fallback to current demo guest)
+    guest_id = current_guest.id
+    if payload.guest_id:
+        custom_guest = db.query(User).filter(User.id == payload.guest_id).first()
+        if custom_guest:
+            guest_id = custom_guest.id
+
     # Calculate itemized fees
     calc = calculate_stay_price(listing, payload.check_in_date, payload.check_out_date)
 
     booking = Booking(
         listing_id=listing.id,
-        guest_id=current_guest.id,
+        guest_id=guest_id,
         check_in_date=payload.check_in_date,
         check_out_date=payload.check_out_date,
         total_guests=payload.total_guests,
@@ -128,6 +135,7 @@ def create_booking(
 
 @router.get("/my-trips", response_model=list[BookingResponse])
 def get_my_trips(
+    guest_id: int | None = Query(None, description="Optional guest id for account-isolated trips"),
     status_filter: str | None = Query(None, description="Filter by status: confirmed, completed, cancelled"),
     db: Session = Depends(get_db),
     current_guest: User = Depends(get_current_guest),
@@ -135,7 +143,13 @@ def get_my_trips(
     """
     Retrieves all reservations booked by the current user.
     """
-    query = db.query(Booking).filter(Booking.guest_id == current_guest.id)
+    target_id = current_guest.id
+    if guest_id:
+        custom_guest = db.query(User).filter(User.id == guest_id).first()
+        if custom_guest:
+            target_id = custom_guest.id
+
+    query = db.query(Booking).filter(Booking.guest_id == target_id)
 
     if status_filter and status_filter.lower() != "all":
         query = query.filter(Booking.status == status_filter.lower())

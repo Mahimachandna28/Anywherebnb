@@ -21,6 +21,7 @@ import { Booking } from "@/types";
 import { fetchApi } from "@/lib/api";
 import { formatCurrency, formatDateRange } from "@/lib/formatters";
 import { useToast } from "@/context/ToastContext";
+import { useUser } from "@/context/UserContext";
 import { cn } from "@/lib/utils";
 
 type TripFilter = "all" | "confirmed" | "completed" | "cancelled";
@@ -30,6 +31,7 @@ const FALLBACK_IMAGE =
 
 function TripsContent() {
   const toast = useToast();
+  const { currentUser } = useUser();
   const searchParams = useSearchParams();
   const isJustConfirmed = searchParams.get("confirmed") === "1";
 
@@ -46,14 +48,17 @@ function TripsContent() {
   const loadTrips = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await fetchApi<Booking[]>("/bookings/my-trips");
+      const url = currentUser
+        ? `/bookings/my-trips?guest_id=${currentUser.id}`
+        : "/bookings/my-trips";
+      const data = await fetchApi<Booking[]>(url);
       setBookings(data);
     } catch (err) {
       console.error("Failed to load user trips:", err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     loadTrips();

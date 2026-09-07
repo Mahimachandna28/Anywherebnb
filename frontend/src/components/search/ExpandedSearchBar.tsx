@@ -122,8 +122,125 @@ export function ExpandedSearchBar() {
         ref={containerRef}
         className="absolute top-2 left-0 right-0 z-50 flex flex-col items-center max-w-4xl mx-auto px-4 sm:px-6"
       >
-        {/* Main Search Bar Shell */}
-        <div className="w-full bg-[#EBEBEB] p-2 rounded-full shadow-2xl flex items-center border border-neutral-300 relative transition-all">
+        {/* 1. Mobile Responsive Search Card (< md) */}
+        <div className="md:hidden w-full bg-white rounded-3xl p-5 shadow-2xl border border-neutral-200 space-y-4 animate-in zoom-in-95">
+          <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
+            <h3 className="font-bold text-base text-neutral-900">Search Stays</h3>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSearchExpanded(false);
+                setActiveSearchTab(null);
+              }}
+              className="p-1.5 rounded-full hover:bg-neutral-100 text-neutral-500"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Where Input */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-neutral-700 uppercase tracking-wider">Destination</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={destinationInput}
+                onChange={(e) => setDestinationInput(e.target.value)}
+                placeholder="Search destination (Goa, Delhi, Jaipur...)"
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-neutral-300 text-sm font-medium focus:border-neutral-900 focus:outline-none"
+              />
+              <MapPin className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {["Goa", "Delhi", "Mumbai", "Jaipur", "Manali", "Udaipur"].map((city) => (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => setDestinationInput(city)}
+                  className={cn(
+                    "text-xs px-2.5 py-1 rounded-full border transition-colors font-medium",
+                    destinationInput.toLowerCase() === city.toLowerCase()
+                      ? "bg-neutral-900 text-white border-neutral-900"
+                      : "bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200"
+                  )}
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* When Dates */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div>
+              <label className="text-[11px] font-bold text-neutral-700 uppercase tracking-wider block mb-1">Check-in</label>
+              <input
+                type="date"
+                value={checkInDate}
+                onChange={(e) => setCheckInDate(e.target.value)}
+                className="w-full border border-neutral-300 rounded-xl px-2.5 py-2 text-xs font-medium focus:outline-none focus:border-neutral-900"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-neutral-700 uppercase tracking-wider block mb-1">Check-out</label>
+              <input
+                type="date"
+                min={checkInDate || undefined}
+                value={checkOutDate}
+                onChange={(e) => setCheckOutDate(e.target.value)}
+                className="w-full border border-neutral-300 rounded-xl px-2.5 py-2 text-xs font-medium focus:outline-none focus:border-neutral-900"
+              />
+            </div>
+          </div>
+
+          {/* Who Guests */}
+          <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-bold text-neutral-700 uppercase tracking-wider">Guests</p>
+              <p className="text-xs text-neutral-500">Adults and children</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={adults <= 0}
+                onClick={() => setAdults((prev) => Math.max(0, prev - 1))}
+                className="w-8 h-8 rounded-full border border-neutral-300 flex items-center justify-center text-neutral-600 disabled:opacity-30"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <span className="w-5 text-center font-bold text-sm text-neutral-900">{totalGuests || 1}</span>
+              <button
+                type="button"
+                onClick={() => setAdults((prev) => Math.max(1, prev + 1))}
+                className="w-8 h-8 rounded-full border border-neutral-300 flex items-center justify-center text-neutral-600"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Actions: Clear & Search */}
+          <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleClearAll}
+              className="text-xs font-bold text-neutral-600 underline hover:text-neutral-900"
+            >
+              Clear all
+            </button>
+            <button
+              type="button"
+              onClick={handleApplySearch}
+              className="flex-1 max-w-[200px] flex items-center justify-center gap-2 bg-[#FF385C] hover:bg-[#E00B41] text-white py-2.5 rounded-xl font-semibold text-sm shadow-md transition-all active:scale-95"
+            >
+              <Search className="w-4 h-4" />
+              <span>Search</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2. Desktop Main Search Bar Shell (hidden md:flex) */}
+        <div className="hidden md:flex w-full bg-[#EBEBEB] p-2 rounded-full shadow-2xl items-center border border-neutral-300 relative transition-all">
           {/* 1. Destination Segment */}
           <div
             onClick={() => setActiveSearchTab("where")}
@@ -245,8 +362,8 @@ export function ExpandedSearchBar() {
           </div>
         </div>
 
-        {/* Floating Popover Panels based on activeSearchTab */}
-        <div className="w-full mt-3 flex justify-start">
+        {/* Floating Popover Panels based on activeSearchTab (Desktop only) */}
+        <div className="hidden md:flex w-full mt-3 justify-start">
           {/* Where: Destinations Popover */}
           {activeSearchTab === "where" && (
             <div className="bg-white rounded-3xl p-6 shadow-2xl border border-neutral-200 w-full max-w-md animate-in fade-in-50 zoom-in-95">

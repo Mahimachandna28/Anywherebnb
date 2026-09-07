@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Listing, Booking } from "@/types";
 import { fetchApi } from "@/lib/api";
+import { useUser } from "@/context/UserContext";
 import { formatCurrency, formatRating, formatDateRange } from "@/lib/formatters";
 import { differenceInDays, parseISO, format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ function CheckoutContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { currentUser } = useUser();
 
   const listingId = Number(params?.id);
 
@@ -143,6 +145,7 @@ function CheckoutContent() {
         method: "POST",
         body: JSON.stringify({
           listing_id: listing.id,
+          guest_id: currentUser?.id,
           check_in_date: checkIn,
           check_out_date: checkOut,
           total_guests: totalGuests,
