@@ -1,8 +1,31 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useFilters } from "@/context/FilterContext";
 
 export function Logo() {
+  const router = useRouter();
+  const { resetFilters, setIsSearchExpanded } = useFilters();
+
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Reset any active filters or search state
+    resetFilters();
+    setIsSearchExpanded(false);
+    // Navigate cleanly to homepage and scroll to top
+    router.push("/");
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
-    <Link href="/" className="flex items-center gap-2 group">
+    <Link
+      href="/"
+      onClick={handleLogoClick}
+      className="flex items-center gap-2 group cursor-pointer select-none"
+      aria-label="Anywherebnb Home"
+    >
       {/* Airbnb Bélo SVG Icon */}
       <svg
         className="h-8 w-8 text-airbnb-rose transition-transform group-hover:scale-105"

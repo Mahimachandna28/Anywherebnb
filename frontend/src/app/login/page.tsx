@@ -1,29 +1,23 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useToast } from "@/context/ToastContext";
 import { User } from "@/types";
 
-export function AuthModal() {
-  const {
-    isAuthModalOpen,
-    setIsAuthModalOpen,
-    allUsers,
-    loginUser,
-  } = useUser();
+export default function AuthPage() {
+  const router = useRouter();
+  const { allUsers, loginUser } = useUser();
   const { success } = useToast();
-
   const [identifier, setIdentifier] = useState("");
-
-  if (!isAuthModalOpen) return null;
 
   const handleContinue = () => {
     const trimmed = identifier.trim();
 
     if (!trimmed) {
-      // Default to primary guest persona if submitted without input
       const defaultUser = allUsers[0] || {
         id: 1,
         name: "Aarav Patel",
@@ -34,12 +28,11 @@ export function AuthModal() {
         joined_date: "2023-01-15T00:00:00Z",
       };
       loginUser(defaultUser);
-      setIsAuthModalOpen(false);
       success(`Signed in as ${defaultUser.name} (Guest)`);
+      router.push("/");
       return;
     }
 
-    // Check if identifier matches any seeded demo user (by email or name)
     const lower = trimmed.toLowerCase();
     const matchedUser = allUsers.find(
       (u) =>
@@ -49,12 +42,11 @@ export function AuthModal() {
 
     if (matchedUser) {
       loginUser(matchedUser);
-      setIsAuthModalOpen(false);
       success(`Signed in as ${matchedUser.name} (${matchedUser.role === "both" ? "Superhost" : matchedUser.role})`);
+      router.push("/");
       return;
     }
 
-    // Otherwise create custom guest session
     const isEmail = trimmed.includes("@");
     const newCustomUser: User = {
       id: Date.now(),
@@ -67,16 +59,16 @@ export function AuthModal() {
     };
 
     loginUser(newCustomUser);
-    setIsAuthModalOpen(false);
     success(`Welcome to Anywherebnb, ${newCustomUser.name}!`);
+    router.push("/");
   };
 
   const handleGoogleSignIn = () => {
     const guestUser = allUsers.find((u) => u.role === "guest") || allUsers[0];
     if (guestUser) {
       loginUser(guestUser);
-      setIsAuthModalOpen(false);
       success(`Signed in with Google as ${guestUser.name}`);
+      router.push("/");
     }
   };
 
@@ -84,33 +76,31 @@ export function AuthModal() {
     const hostUser = allUsers.find((u) => u.role === "host" || u.role === "both") || allUsers[1] || allUsers[0];
     if (hostUser) {
       loginUser(hostUser);
-      setIsAuthModalOpen(false);
       success(`Signed in with Apple as ${hostUser.name} (Host)`);
+      router.push("/");
     }
   };
 
   const handleSelectDemoUser = (user: User) => {
     loginUser(user);
-    setIsAuthModalOpen(false);
     success(`Switched to ${user.name} (${user.role === "both" ? "Superhost" : user.role})`);
+    router.push("/");
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className="min-h-[85vh] flex items-center justify-center p-4 bg-neutral-50/60">
       <div
-        className="bg-white w-full max-w-[420px] rounded-[32px] shadow-2xl border border-neutral-200/80 p-8 relative animate-in zoom-in-95 duration-200"
-        role="dialog"
-        aria-modal="true"
+        className="bg-white w-full max-w-[420px] rounded-[32px] shadow-xl border border-neutral-200/80 p-8 relative"
+        role="main"
       >
-        {/* Top-right close button */}
-        <button
-          type="button"
-          onClick={() => setIsAuthModalOpen(false)}
-          aria-label="Close"
+        {/* Top-right close button navigating back to home */}
+        <Link
+          href="/"
+          aria-label="Back to home"
           className="absolute top-6 right-6 w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-800 transition"
         >
           <X className="w-5 h-5 stroke-[2]" />
-        </button>
+        </Link>
 
         {/* Coral Bélo Logo */}
         <div className="flex justify-center pt-2 pb-1">
@@ -125,9 +115,9 @@ export function AuthModal() {
         </div>
 
         {/* Heading matching reference image */}
-        <h2 className="text-[26px] font-bold text-neutral-900 text-center tracking-tight mt-3 mb-6">
+        <h1 className="text-[26px] font-bold text-neutral-900 text-center tracking-tight mt-3 mb-6">
           Log in or sign up
-        </h2>
+        </h1>
 
         {/* Phone number or email input field */}
         <div className="relative">
