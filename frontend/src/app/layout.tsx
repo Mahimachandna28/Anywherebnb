@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { UserProvider } from "@/context/UserContext";
 import { FilterProvider } from "@/context/FilterContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { FilterModal } from "@/components/listings/FilterModal";
@@ -23,14 +24,16 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-white text-airbnb-dark antialiased">
         <UserProvider>
-          <FilterProvider>
-            <Navbar />
-            <div className="flex-1">
-              {children}
-            </div>
-            <Footer />
-            <FilterModal />
-          </FilterProvider>
+          <WishlistProvider>
+            <FilterProvider>
+              <Navbar />
+              <div className="flex-1">
+                {children}
+              </div>
+              <Footer />
+              <FilterModal />
+            </FilterProvider>
+          </WishlistProvider>
         </UserProvider>
       </body>
     </html>
