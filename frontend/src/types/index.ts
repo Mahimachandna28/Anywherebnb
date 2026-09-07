@@ -69,6 +69,7 @@ export interface Listing {
   review_count: number;
   images: ListingImage[];
   amenities: Amenity[];
+  reviews?: Review[];
   booked_dates?: string[];
   created_at: string;
 }
