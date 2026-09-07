@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { UserProvider } from "@/context/UserContext";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "Anywherebnb: Vacation Rentals, Cabins, Beach Houses & More",
@@ -16,8 +19,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-white text-airbnb-dark antialiased">
-        {children}
+      <body className="min-h-screen flex flex-col bg-white text-airbnb-dark antialiased">
+        <UserProvider>
+          <Navbar />
+          <div className="flex-1">
+            {children}
+          </div>
+          <Footer />
+        </UserProvider>
       </body>
     </html>
   );
