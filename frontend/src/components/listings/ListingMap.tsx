@@ -73,14 +73,17 @@ export function ListingMap({ listing }: ListingMapProps) {
 
         mapInstanceRef.current = map;
 
-        // CartoDB Voyager Tile Layer (Modern, crisp, Google Maps style)
-        L.tileLayer(
-          "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-          {
-            maxZoom: 19,
-            subdomains: "abcd",
-          }
-        ).addTo(map);
+        // OpenStreetMap Standard Layer (100% Free, No Watermark, No API key needed)
+        // If user configures NEXT_PUBLIC_CARTO_API_KEY, CartoDB Voyager will be used instead.
+        const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+        const tileUrl = cartoKey
+          ? `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?api_key=${cartoKey}`
+          : "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+        L.tileLayer(tileUrl, {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
 
         // 1. Add BnB Home Marker (Black circle with white house icon)
         const homeIconHtml = `
@@ -404,7 +407,7 @@ export function ListingMap({ listing }: ListingMapProps) {
           <span>·</span>
           <span>500 m scale</span>
           <span>·</span>
-          <span>OpenStreetMap &amp; CartoDB Data</span>
+          <span>OpenStreetMap Contributors</span>
         </div>
       </div>
 
