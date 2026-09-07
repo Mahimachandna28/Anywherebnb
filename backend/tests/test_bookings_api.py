@@ -106,3 +106,34 @@ def test_booking_guest_capacity_exceeded():
     res = client.post("/api/bookings", json=payload)
     assert res.status_code == 400
     assert "maximum" in res.json()["detail"].lower()
+
+def test_cancel_nonexistent_booking():
+    res = client.post("/api/bookings/999999/cancel")
+    assert res.status_code == 404
+
+def test_create_booking_invalid_date_order():
+    list_res = client.get("/api/listings")
+    listing_id = list_res.json()["items"][0]["id"]
+    today = date.today()
+
+    payload = {
+        "listing_id": listing_id,
+        "check_in_date": (today + timedelta(days=20)).isoformat(),
+        "check_out_date": (today + timedelta(days=15)).isoformat(),  # Check-out before check-in
+        "total_guests": 2,
+    }
+
+    res = client.post("/api/bookings", json=payload)
+    assert res.status_code == 400
+    assert "after" in res.json()["detail"].lower()
+
+def test_calculate_price_nonexistent_listing():
+    today = date.today()
+    payload = {
+        "listing_id": 999999,
+        "check_in_date": (today + timedelta(days=5)).isoformat(),
+        "check_out_date": (today + timedelta(days=10)).isoformat(),
+        "total_guests": 2,
+    }
+    res = client.post("/api/bookings/calculate-price", json=payload)
+    assert res.status_code == 404

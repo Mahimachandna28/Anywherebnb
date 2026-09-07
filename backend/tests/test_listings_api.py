@@ -75,3 +75,35 @@ def test_get_listing_detail_success():
 def test_get_listing_detail_not_found():
     response = client.get("/api/listings/99999")
     assert response.status_code == 404
+
+def test_filter_listings_by_price_range():
+    response = client.get("/api/listings?min_price=200&max_price=600")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    for item in data["items"]:
+        assert 200 <= item["price_per_night"] <= 600
+
+def test_filter_listings_by_guests():
+    response = client.get("/api/listings?guests=4")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    for item in data["items"]:
+        assert item["max_guests"] >= 4
+
+def test_filter_listings_by_property_type():
+    response = client.get("/api/listings?property_type=Villa")
+    assert response.status_code == 200
+    data = response.json()
+    assert "items" in data
+    for item in data["items"]:
+        assert item["property_type"] == "Villa"
+
+def test_listings_pagination():
+    response = client.get("/api/listings?skip=0&limit=5")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 5
+    assert data["limit"] == 5
+    assert data["skip"] == 0
