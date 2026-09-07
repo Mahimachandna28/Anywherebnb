@@ -21,7 +21,7 @@ import { ListingCard, ListingCardSkeleton } from "@/components/listings";
 
 export default function WishlistsPage() {
   const { wishlistIds, isWishlisted, toggleWishlist } = useWishlist();
-  const { currentUser } = useUser();
+  const { currentUser, setIsAuthModalOpen } = useUser();
   const toast = useToast();
 
   const [listings, setListings] = useState<Listing[]>([]);
@@ -31,12 +31,21 @@ export default function WishlistsPage() {
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [recentlyRemoved, setRecentlyRemoved] = useState<Listing | null>(null);
 
-  // Fetch wishlisted properties
+  // Fetch wishlisted properties for current user account
   const loadWishlists = useCallback(async () => {
+    if (!currentUser) {
+      setListings([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchApi<Listing[]>("/wishlists");
+      const headers: Record<string, string> = {};
+      if (currentUser.email) headers["X-User-Email"] = currentUser.email;
+      if (currentUser.id) headers["X-User-Id"] = String(currentUser.id);
+
+      const data = await fetchApi<Listing[]>("/wishlists", { headers });
       setListings(data);
     } catch (err: any) {
       console.error("Failed to load wishlist listings:", err);
@@ -44,7 +53,7 @@ export default function WishlistsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     loadWishlists();
@@ -127,11 +136,13 @@ export default function WishlistsPage() {
               Wishlists
             </h1>
             <p className="text-sm text-neutral-500 mt-1">
-              {isLoading
+              {!currentUser
+                ? "Sign in to access your personal wishlist."
+                : isLoading
                 ? "Loading your saved collections..."
                 : `${activeWishlistListings.length} ${
                     activeWishlistListings.length === 1 ? "stay" : "stays"
-                  } saved for your future journeys.`}
+                  } saved for ${currentUser.name || currentUser.phone || currentUser.email}.`}
             </p>
           </div>
 
@@ -169,19 +180,19 @@ export default function WishlistsPage() {
         {!isLoading && activeWishlistListings.length > 1 && (
           <div className="mb-8 max-w-md">
             <div className="relative">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
+                placeholder="Search by city, title, or category..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search saved stays by city, country, or title..."
-                className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-neutral-200 focus:outline-none focus:border-neutral-900 transition bg-neutral-50/60 focus:bg-white text-neutral-900"
+                className="w-full pl-10 pr-10 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:bg-white transition"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -190,8 +201,32 @@ export default function WishlistsPage() {
           </div>
         )}
 
-        {/* Loading State */}
-        {isLoading ? (
+        {/* Content States */}
+        {!currentUser ? (
+          /* Unauthenticated State */
+          <div className="border border-neutral-200 rounded-3xl p-12 text-center max-w-lg mx-auto my-12 space-y-5 bg-white shadow-sm">
+            <div className="w-20 h-20 rounded-full bg-rose-50 text-[#FF385C] flex items-center justify-center mx-auto shadow-inner">
+              <Heart className="w-10 h-10 stroke-[1.5]" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold text-neutral-900">
+                Log in to view your wishlists
+              </h3>
+              <p className="text-sm text-neutral-500 leading-relaxed max-w-sm mx-auto">
+                Every phone number and email account has its own separate, private wishlist. Sign in with OTP to view your saved stays.
+              </p>
+            </div>
+            <div className="pt-3">
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="inline-flex items-center gap-2 bg-[#E00B41] hover:bg-[#D70466] text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-md transition active:scale-95 cursor-pointer"
+              >
+                Log in or sign up
+              </button>
+            </div>
+          </div>
+        ) : isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
             {Array.from({ length: 8 }).map((_, idx) => (
               <ListingCardSkeleton key={idx} />

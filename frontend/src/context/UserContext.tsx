@@ -34,6 +34,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const users = await fetchApi<User[]>("/users");
         setAllUsers(users);
         
+        // Restore existing user session if present
+        if (typeof window !== "undefined") {
+          const savedUserStr = localStorage.getItem("anywherebnb_current_user");
+          const savedLoggedIn = localStorage.getItem("anywherebnb_is_logged_in");
+          if (savedUserStr && savedLoggedIn === "true") {
+            try {
+              const parsed = JSON.parse(savedUserStr);
+              setCurrentUser(parsed);
+              setCurrentRole(parsed.role === "host" ? "host" : "guest");
+              setIsLoggedIn(true);
+              return;
+            } catch {
+              // ignore json parse errors
+            }
+          }
+        }
+
         // Default to Aarav Patel (Guest) or first user
         const defaultGuest = users.find((u) => u.email === "aarav.patel@example.com") || users[0];
         if (defaultGuest) {
@@ -66,6 +83,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setCurrentUser(target);
       setCurrentRole(target.role === "host" ? "host" : "guest");
       setIsLoggedIn(true);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("anywherebnb_current_user", JSON.stringify(target));
+        localStorage.setItem("anywherebnb_is_logged_in", "true");
+      }
     }
   };
 
@@ -74,10 +95,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setCurrentRole(user.role === "host" ? "host" : "guest");
     setIsLoggedIn(true);
     setIsAuthModalOpen(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("anywherebnb_current_user", JSON.stringify(user));
+      localStorage.setItem("anywherebnb_is_logged_in", "true");
+    }
   };
 
   const logoutUser = () => {
     setIsLoggedIn(false);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("anywherebnb_current_user");
+      localStorage.setItem("anywherebnb_is_logged_in", "false");
+    }
   };
 
   const toggleRole = () => {

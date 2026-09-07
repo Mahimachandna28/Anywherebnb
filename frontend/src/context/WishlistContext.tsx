@@ -14,6 +14,14 @@ interface WishlistContextType {
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
+function getAccountKey(user: { id?: number; email?: string; phone?: string } | null): string {
+  if (!user) return "anonymous";
+  if (user.phone && user.phone.trim()) return user.phone.trim();
+  if (user.email && user.email.trim()) return user.email.trim().toLowerCase();
+  if (user.id) return `user_${user.id}`;
+  return "anonymous";
+}
+
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { currentUser } = useUser();
   const toast = useToast();
@@ -28,13 +36,41 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const key = `anywherebnb_wishlist_${getAccountKey(currentUser)}`;
+
+    // 1. Instant local cache lookup for fast UI rendering
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem(key);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            setWishlistIds(new Set(parsed));
+          }
+        } else {
+          setWishlistIds(new Set());
+        }
+      } catch (err) {
+        console.warn("Failed to read local wishlist cache:", err);
+      }
+    }
+
+    // 2. Fetch from backend with user headers for persistent sync
     try {
       setIsLoading(true);
-      const ids = await fetchApi<number[]>("/wishlists/ids");
-      setWishlistIds(new Set(ids));
+      const headers: Record<string, string> = {};
+      if (currentUser.email) headers["X-User-Email"] = currentUser.email;
+      if (currentUser.id) headers["X-User-Id"] = String(currentUser.id);
+
+      const ids = await fetchApi<number[]>("/wishlists/ids", { headers });
+      const idSet = new Set(ids);
+      setWishlistIds(idSet);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(key, JSON.stringify(Array.from(idSet)));
+      }
     } catch (error) {
-      console.warn("Failed to load wishlist IDs:", error);
-      // Keep existing or empty state gracefully
+      console.warn("Failed to load wishlist IDs from server:", error);
     } finally {
       setIsLoading(false);
     }
@@ -53,52 +89,68 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWishlist = useCallback(
     async (listingId: number): Promise<boolean> => {
+      if (!currentUser) {
+        toast.info("Please log in to save stays to your wishlist");
+        return false;
+      }
+
       const isCurrentlySaved = wishlistIds.has(listingId);
       const nextState = !isCurrentlySaved;
+      const key = `anywherebnb_wishlist_${getAccountKey(currentUser)}`;
 
       // Optimistic update
-      setWishlistIds((prev) => {
-        const next = new Set(prev);
-        if (nextState) {
-          next.add(listingId);
-        } else {
-          next.delete(listingId);
-        }
-        return next;
-      });
+      const updated = new Set(wishlistIds);
+      if (nextState) {
+        updated.add(listingId);
+      } else {
+        updated.delete(listingId);
+      }
+      setWishlistIds(updated);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(key, JSON.stringify(Array.from(updated)));
+      }
 
       try {
+        const headers: Record<string, string> = {};
+        if (currentUser.email) headers["X-User-Email"] = currentUser.email;
+        if (currentUser.id) headers["X-User-Id"] = String(currentUser.id);
+
         const response = await fetchApi<{
           listing_id: number;
           is_favorited: boolean;
           message: string;
         }>("/wishlists/toggle", {
           method: "POST",
+          headers,
           body: JSON.stringify({ listing_id: listingId }),
         });
 
         // Ensure state matches server response
         setWishlistIds((prev) => {
-          const updated = new Set(prev);
+          const finalSet = new Set(prev);
           if (response.is_favorited) {
-            updated.add(listingId);
+            finalSet.add(listingId);
           } else {
-            updated.delete(listingId);
+            finalSet.delete(listingId);
           }
-          return updated;
+          if (typeof window !== "undefined") {
+            localStorage.setItem(key, JSON.stringify(Array.from(finalSet)));
+          }
+          return finalSet;
         });
 
         if (response.is_favorited) {
-          toast.success("Saved to your wishlists");
+          toast.success("Saved to your wishlist");
         } else {
-          toast.info("Removed from your wishlists");
+          toast.info("Removed from your wishlist");
         }
 
         return response.is_favorited;
       } catch (error) {
         console.error("Failed to toggle wishlist item:", error);
         toast.error("Failed to update wishlist. Please try again.");
-        // Revert optimistic update on failure
+        // Revert on failure
         setWishlistIds((prev) => {
           const reverted = new Set(prev);
           if (isCurrentlySaved) {
@@ -106,12 +158,15 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
           } else {
             reverted.delete(listingId);
           }
+          if (typeof window !== "undefined") {
+            localStorage.setItem(key, JSON.stringify(Array.from(reverted)));
+          }
           return reverted;
         });
         return isCurrentlySaved;
       }
     },
-    [wishlistIds, toast]
+    [wishlistIds, currentUser, toast]
   );
 
   return (
