@@ -20,10 +20,20 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/", tags=["Health"])
+def root():
+    """Root endpoint for easy service health verification."""
+    return {
+        "message": "Anywherebnb API is live.",
+        "docs": "/api/docs",
+        "health": "/api/health",
+    }
 
 # Include API Routers with /api prefix
 app.include_router(listings_router, prefix=settings.API_V1_STR)
