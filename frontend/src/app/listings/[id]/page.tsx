@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ArrowLeft } from "lucide-react";
@@ -14,6 +14,9 @@ import {
   ListingHighlights,
   SleepingArrangements,
   AmenitiesSection,
+  ListingCalendar,
+  BookingWidget,
+  ReviewsSection,
 } from "@/components/listings";
 
 export default function ListingDetailPage() {
@@ -24,6 +27,16 @@ export default function ListingDetailPage() {
   const [listing, setListing] = useState<Listing | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Booking & Calendar State
+  const [checkIn, setCheckIn] = useState<string | null>(null);
+  const [checkOut, setCheckOut] = useState<string | null>(null);
+  const [guests, setGuests] = useState<number>(1);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  const scrollToCalendar = () => {
+    calendarRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   // Photo gallery modal state
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -137,8 +150,8 @@ export default function ListingDetailPage() {
 
         {/* 3. Property Information & Highlights Section */}
         <div className="mt-8 pt-8 border-t border-neutral-200">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Left Column: Property Info & Details */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative">
+            {/* Left Column: Property Info, Highlights, Amenities & Calendar */}
             <div className="lg:col-span-2 space-y-2">
               {/* 3.1 Host Banner & Room Specs */}
               <HostBanner
@@ -182,23 +195,43 @@ export default function ListingDetailPage() {
               <AmenitiesSection
                 amenities={listing.amenities || []}
               />
-            </div>
 
-            {/* Right Column: Pricing snippet */}
-            <div className="lg:col-span-1">
-              <div className="border border-neutral-200 rounded-2xl p-6 shadow-airbnb">
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-2xl font-bold text-neutral-900">
-                    ${listing.price_per_night}
-                  </span>
-                  <span className="text-neutral-600 text-sm">night</span>
-                </div>
-                <div className="text-xs text-neutral-500 mb-4">
-                  Interactive 2-month calendar and sticky checkout widget loading in Stage 6.3...
-                </div>
+              {/* 3.6 Interactive 2-Month Availability Calendar */}
+              <div ref={calendarRef}>
+                <ListingCalendar
+                  bookedDates={listing.booked_dates || []}
+                  checkIn={checkIn}
+                  checkOut={checkOut}
+                  onChange={(ci, co) => {
+                    setCheckIn(ci);
+                    setCheckOut(co);
+                  }}
+                  city={listing.city}
+                />
               </div>
             </div>
+
+            {/* Right Column: Sticky Booking Price Calculation Widget */}
+            <div className="lg:col-span-1">
+              <BookingWidget
+                listing={listing}
+                checkIn={checkIn}
+                checkOut={checkOut}
+                onFocusCalendar={scrollToCalendar}
+                totalGuests={guests}
+                onGuestChange={setGuests}
+              />
+            </div>
           </div>
+        </div>
+
+        {/* 4. 6-Category Reviews Breakdown Section */}
+        <div className="mt-8">
+          <ReviewsSection
+            reviews={listing.reviews || []}
+            rating={listing.rating}
+            reviewCount={listing.review_count}
+          />
         </div>
       </main>
 

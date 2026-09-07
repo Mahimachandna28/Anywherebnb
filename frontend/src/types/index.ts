@@ -32,6 +32,7 @@ export interface Review {
   guest_id: number;
   guest_name?: string;
   guest_avatar?: string;
+  guest?: User;
   rating: number;
   cleanliness: number;
   accuracy: number;
