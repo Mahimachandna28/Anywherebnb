@@ -10,6 +10,10 @@ import {
   ListingHeader,
   PhotoCollage,
   PhotoModal,
+  HostBanner,
+  ListingHighlights,
+  SleepingArrangements,
+  AmenitiesSection,
 } from "@/components/listings";
 
 export default function ListingDetailPage() {
@@ -131,26 +135,53 @@ export default function ListingDetailPage() {
           onOpenModal={handleOpenPhotoModal}
         />
 
-        {/* 3. Stage 6.2 & 6.3 Details Section Placeholder */}
+        {/* 3. Property Information & Highlights Section */}
         <div className="mt-8 pt-8 border-t border-neutral-200">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Left Column: Property Info & Details */}
-            <div className="lg:col-span-2 space-y-6">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-semibold text-neutral-900">
-                  {listing.room_type} in {listing.city}, {listing.country}
-                </h2>
-                <p className="text-neutral-600 text-sm mt-1">
-                  {listing.max_guests} guests · {listing.bedrooms} {listing.bedrooms === 1 ? "bedroom" : "bedrooms"} · {listing.beds} {listing.beds === 1 ? "bed" : "beds"} · {listing.bathrooms} {listing.bathrooms === 1 ? "bath" : "baths"}
-                </p>
-              </div>
+            <div className="lg:col-span-2 space-y-2">
+              {/* 3.1 Host Banner & Room Specs */}
+              <HostBanner
+                host={listing.host}
+                roomType={listing.room_type}
+                city={listing.city}
+                country={listing.country}
+                maxGuests={listing.max_guests}
+                bedrooms={listing.bedrooms}
+                beds={listing.beds}
+                bathrooms={listing.bathrooms}
+                rating={listing.rating}
+                reviewCount={listing.review_count}
+              />
 
-              <div className="border-t border-neutral-200 pt-6">
-                <h3 className="text-lg font-semibold text-neutral-900 mb-3">About this place</h3>
-                <p className="text-neutral-700 leading-relaxed whitespace-pre-line text-sm sm:text-base">
+              {/* 3.2 Property Highlights */}
+              <ListingHighlights
+                isSuperhost={listing.host?.is_superhost}
+                hostName={listing.host?.name}
+                rating={listing.rating}
+                location={listing.city}
+              />
+
+              {/* 3.3 Description */}
+              <div className="py-6 border-b border-neutral-200 space-y-3">
+                <h3 className="text-xl font-semibold text-neutral-900">
+                  About this place
+                </h3>
+                <p className="text-neutral-700 leading-relaxed whitespace-pre-line text-[15px]">
                   {listing.description}
                 </p>
               </div>
+
+              {/* 3.4 Sleeping Arrangements */}
+              <SleepingArrangements
+                bedrooms={listing.bedrooms}
+                beds={listing.beds}
+              />
+
+              {/* 3.5 Full Amenities with Modal */}
+              <AmenitiesSection
+                amenities={listing.amenities || []}
+              />
             </div>
 
             {/* Right Column: Pricing snippet */}

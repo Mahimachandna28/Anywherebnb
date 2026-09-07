@@ -5,3 +5,8 @@ export { FilterModal } from "./FilterModal";
 export { PhotoCollage } from "./PhotoCollage";
 export { PhotoModal } from "./PhotoModal";
 export { ListingHeader } from "./ListingHeader";
+export { HostBanner } from "./HostBanner";
+export { ListingHighlights } from "./ListingHighlights";
+export { AmenitiesSection } from "./AmenitiesSection";
+export { AmenitiesModal } from "./AmenitiesModal";
+export { SleepingArrangements } from "./SleepingArrangements";
