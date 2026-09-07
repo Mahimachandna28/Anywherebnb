@@ -117,3 +117,31 @@ export interface SearchFilterState {
   bedrooms?: number;
   amenities?: string[];
 }
+
+export interface HostMetrics {
+  total_revenue: number;
+  active_listings_count: number;
+  total_reservations_count: number;
+  average_rating: number;
+}
+
+export interface HostRecentReservation {
+  id: number;
+  listing_id: number;
+  listing_title: string;
+  listing_city: string;
+  guest_name: string;
+  guest_avatar?: string;
+  check_in_date: string;
+  check_out_date: string;
+  total_guests: number;
+  total_price: number;
+  status: string;
+  created_at: string;
+}
+
+export interface HostDashboardData {
+  host: User;
+  metrics: HostMetrics;
+  recent_reservations: HostRecentReservation[];
+}

@@ -24,7 +24,7 @@ import { formatCurrency, formatRating, formatDateRange } from "@/lib/formatters"
 import { differenceInDays, parseISO, format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -666,5 +666,28 @@ export default function CheckoutPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 animate-pulse space-y-6">
+          <div className="h-8 w-1/4 bg-neutral-200 rounded" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-7 space-y-6">
+              <div className="h-32 bg-neutral-200 rounded-2xl" />
+              <div className="h-48 bg-neutral-200 rounded-2xl" />
+            </div>
+            <div className="lg:col-span-5">
+              <div className="h-96 bg-neutral-200 rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </React.Suspense>
   );
 }
