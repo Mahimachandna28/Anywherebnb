@@ -24,6 +24,7 @@ import {
 import { Listing, Amenity } from "@/types";
 import { fetchApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/formatters";
+import { useToast } from "@/context/ToastContext";
 import { cn } from "@/lib/utils";
 
 interface ListingWizardFormProps {
@@ -109,6 +110,7 @@ export function ListingWizardForm({
   isEditing = false,
 }: ListingWizardFormProps) {
   const router = useRouter();
+  const toast = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -277,20 +279,23 @@ export function ListingWizardForm({
           method: "PUT",
           body: JSON.stringify(payload),
         });
+        toast.success("Listing updated successfully!");
       } else {
         await fetchApi<Listing>("/listings", {
           method: "POST",
           body: JSON.stringify(payload),
         });
+        toast.success("Listing published successfully! Your property is live.");
       }
 
       // Redirect back to host dashboard
       router.push("/host");
     } catch (err: any) {
       console.error("Failed to save listing:", err);
-      setGeneralError(
-        err.message || "Failed to save listing. Please verify all inputs and try again."
-      );
+      const errMsg =
+        err.message || "Failed to save listing. Please verify all inputs and try again.";
+      setGeneralError(errMsg);
+      toast.error(errMsg);
       setIsSubmitting(false);
     }
   };

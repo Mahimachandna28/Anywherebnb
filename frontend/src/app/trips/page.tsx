@@ -20,6 +20,7 @@ import {
 import { Booking } from "@/types";
 import { fetchApi } from "@/lib/api";
 import { formatCurrency, formatDateRange } from "@/lib/formatters";
+import { useToast } from "@/context/ToastContext";
 import { cn } from "@/lib/utils";
 
 type TripFilter = "all" | "confirmed" | "completed" | "cancelled";
@@ -28,6 +29,7 @@ const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80";
 
 function TripsContent() {
+  const toast = useToast();
   const searchParams = useSearchParams();
   const isJustConfirmed = searchParams.get("confirmed") === "1";
 
@@ -75,12 +77,14 @@ function TripsContent() {
       setCancelSuccessMessage(
         `Reservation at "${cancellingBooking.listing?.title || "Property"}" cancelled. The dates have been released.`
       );
+      toast.info(`Reservation cancelled. Dates released.`);
       setCancellingBooking(null);
 
       setTimeout(() => setCancelSuccessMessage(null), 5000);
     } catch (err: any) {
       console.error("Failed to cancel booking:", err);
-      alert(err.message || "Failed to cancel reservation.");
+      const errMsg = err.message || "Failed to cancel reservation.";
+      toast.error(errMsg);
     } finally {
       setIsCancelling(false);
     }

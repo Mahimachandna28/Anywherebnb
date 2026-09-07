@@ -16,6 +16,7 @@ import {
 import { Listing, HostDashboardData } from "@/types";
 import { fetchApi } from "@/lib/api";
 import { useUser } from "@/context/UserContext";
+import { useToast } from "@/context/ToastContext";
 import {
   HostMetricsGrid,
   HostListingTable,
@@ -26,6 +27,7 @@ import { cn } from "@/lib/utils";
 
 export default function HostDashboardPage() {
   const router = useRouter();
+  const toast = useToast();
   const { currentRole, toggleRole } = useUser();
 
   const [dashboardData, setDashboardData] = useState<HostDashboardData | null>(null);
@@ -80,6 +82,7 @@ export default function HostDashboardPage() {
     }
 
     setSuccessBanner("Listing was permanently deleted.");
+    toast.success("Listing permanently deleted.");
     setTimeout(() => setSuccessBanner(null), 5000);
   };
 

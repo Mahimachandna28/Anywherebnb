@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { fetchApi } from "@/lib/api";
 import { useUser } from "./UserContext";
+import { useToast } from "./ToastContext";
 
 interface WishlistContextType {
   wishlistIds: Set<number>;
@@ -15,6 +16,7 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const { currentUser } = useUser();
+  const toast = useToast();
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -86,9 +88,16 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
           return updated;
         });
 
+        if (response.is_favorited) {
+          toast.success("Saved to your wishlists");
+        } else {
+          toast.info("Removed from your wishlists");
+        }
+
         return response.is_favorited;
       } catch (error) {
         console.error("Failed to toggle wishlist item:", error);
+        toast.error("Failed to update wishlist. Please try again.");
         // Revert optimistic update on failure
         setWishlistIds((prev) => {
           const reverted = new Set(prev);
@@ -102,7 +111,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         return isCurrentlySaved;
       }
     },
-    [wishlistIds]
+    [wishlistIds, toast]
   );
 
   return (

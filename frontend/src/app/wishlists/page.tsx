@@ -16,11 +16,13 @@ import { Listing } from "@/types";
 import { fetchApi } from "@/lib/api";
 import { useWishlist } from "@/context/WishlistContext";
 import { useUser } from "@/context/UserContext";
+import { useToast } from "@/context/ToastContext";
 import { ListingCard, ListingCardSkeleton } from "@/components/listings";
 
 export default function WishlistsPage() {
   const { wishlistIds, isWishlisted, toggleWishlist } = useWishlist();
   const { currentUser } = useUser();
+  const toast = useToast();
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -64,6 +66,7 @@ export default function WishlistsPage() {
       if (typeof window !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(window.location.href);
         setCopiedLink(true);
+        toast.success("Wishlist link copied to clipboard!");
         setTimeout(() => setCopiedLink(false), 3000);
       }
     } catch (err) {
