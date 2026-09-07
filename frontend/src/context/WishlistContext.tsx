@@ -23,14 +23,14 @@ function getAccountKey(user: { id?: number; email?: string; phone?: string } | n
 }
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useUser();
+  const { currentUser, isLoggedIn, setIsAuthModalOpen } = useUser();
   const toast = useToast();
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Fetch wishlisted listing IDs when current user changes
   const loadWishlistIds = useCallback(async () => {
-    if (!currentUser) {
+    if (!isLoggedIn || !currentUser) {
       setWishlistIds(new Set());
       setIsLoading(false);
       return;
@@ -89,8 +89,9 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWishlist = useCallback(
     async (listingId: number): Promise<boolean> => {
-      if (!currentUser) {
-        toast.info("Please log in to save stays to your wishlist");
+      if (!isLoggedIn || !currentUser) {
+        setIsAuthModalOpen(true);
+        toast.info("Please log in or sign up with OTP to save stays to your wishlist");
         return false;
       }
 

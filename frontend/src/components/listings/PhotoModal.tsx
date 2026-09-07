@@ -5,6 +5,7 @@ import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, Share2, Heart, Check } from "lucide-react";
 import { ListingImage } from "@/types";
 import { useWishlist } from "@/context/WishlistContext";
+import { useUser } from "@/context/UserContext";
 import { cn } from "@/lib/utils";
 
 interface PhotoModalProps {
@@ -33,6 +34,7 @@ export function PhotoModal({
   listingId,
 }: PhotoModalProps) {
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const { isLoggedIn, setIsAuthModalOpen } = useUser();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [copied, setCopied] = useState(false);
 
@@ -149,8 +151,14 @@ export function PhotoModal({
 
           <button
             type="button"
-            onClick={() => toggleWishlist(listingId)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-neutral-100 text-sm font-medium text-neutral-800 transition-colors"
+            onClick={() => {
+              if (!isLoggedIn) {
+                setIsAuthModalOpen(true);
+                return;
+              }
+              toggleWishlist(listingId);
+            }}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-neutral-100 text-sm font-medium text-neutral-800 transition-colors cursor-pointer"
           >
             <Heart
               className={cn(

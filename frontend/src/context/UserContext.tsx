@@ -51,24 +51,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // Default to Aarav Patel (Guest) or first user
-        const defaultGuest = users.find((u) => u.email === "aarav.patel@example.com") || users[0];
-        if (defaultGuest) {
-          setCurrentUser(defaultGuest);
-          setCurrentRole("guest");
-        }
+        // Unauthenticated initial visitor state
+        setCurrentUser(null);
+        setCurrentRole("guest");
+        setIsLoggedIn(false);
       } catch (error) {
         console.error("Failed to load initial users:", error);
-        // Fallback demo user if backend is momentarily unreachable
-        setCurrentUser({
-          id: 1,
-          name: "Aarav Patel",
-          email: "aarav.patel@example.com",
-          avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-          is_superhost: false,
-          role: "guest",
-          joined_date: new Date().toISOString(),
-        });
+        setCurrentUser(null);
+        setIsLoggedIn(false);
       } finally {
         setIsLoading(false);
       }
@@ -103,6 +93,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const logoutUser = () => {
     setIsLoggedIn(false);
+    setCurrentUser(null);
     if (typeof window !== "undefined") {
       localStorage.removeItem("anywherebnb_current_user");
       localStorage.setItem("anywherebnb_is_logged_in", "false");

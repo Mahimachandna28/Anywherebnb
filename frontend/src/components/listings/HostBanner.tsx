@@ -36,7 +36,7 @@ export function HostBanner({
 }: HostBannerProps) {
   const hostName = host?.name || "Marco";
   const isSuperhost = host?.is_superhost ?? true;
-  const isGuestFavorite = rating >= 4.9 && reviewCount >= 3;
+  const isGuestFavorite = rating >= 4.96 && reviewCount >= 40;
 
   return (
     <div className="space-y-6 pb-6 border-b border-neutral-200">

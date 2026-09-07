@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Star, Share2, Heart, Check, Award } from "lucide-react";
 import { formatRating } from "@/lib/formatters";
 import { useWishlist } from "@/context/WishlistContext";
+import { useUser } from "@/context/UserContext";
 import { cn } from "@/lib/utils";
 
 interface ListingHeaderProps {
@@ -28,6 +29,7 @@ export function ListingHeader({
   isSuperhost = false,
 }: ListingHeaderProps) {
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const { isLoggedIn, setIsAuthModalOpen } = useUser();
   const [copied, setCopied] = useState(false);
 
   const isSaved = isWishlisted(listingId);
@@ -109,8 +111,14 @@ export function ListingHeader({
           {/* Save / Wishlist Button */}
           <button
             type="button"
-            onClick={() => toggleWishlist(listingId)}
-            className="flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-900 font-semibold text-sm underline active:scale-95"
+            onClick={() => {
+              if (!isLoggedIn) {
+                setIsAuthModalOpen(true);
+                return;
+              }
+              toggleWishlist(listingId);
+            }}
+            className="flex items-center gap-2 p-2 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-900 font-semibold text-sm underline active:scale-95 cursor-pointer"
           >
             <Heart
               className={cn(

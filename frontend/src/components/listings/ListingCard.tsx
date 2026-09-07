@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Star, Heart } from "lucide-react";
 import { Listing } from "@/types";
 import { formatCurrency, formatRating } from "@/lib/formatters";
 import { useWishlist } from "@/context/WishlistContext";
+import { useUser } from "@/context/UserContext";
 import { cn } from "@/lib/utils";
 
 interface ListingCardProps {
@@ -19,6 +20,7 @@ const FALLBACK_IMAGE =
 
 export function ListingCard({ listing, priority = false }: ListingCardProps) {
   const { isWishlisted, toggleWishlist } = useWishlist();
+  const { isLoggedIn, setIsAuthModalOpen } = useUser();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
   const [isTogglingHeart, setIsTogglingHeart] = useState(false);
@@ -56,12 +58,16 @@ export function ListingCard({ listing, priority = false }: ListingCardProps) {
   const handleHeartClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!isLoggedIn) {
+      setIsAuthModalOpen(true);
+      return;
+    }
     setIsTogglingHeart(true);
     await toggleWishlist(listing.id);
     setTimeout(() => setIsTogglingHeart(false), 300);
   };
 
-  const isGuestFavorite = listing.rating >= 4.9 && listing.review_count >= 3;
+  const isGuestFavorite = listing.rating >= 4.96 && listing.review_count >= 40;
 
   return (
     <Link
