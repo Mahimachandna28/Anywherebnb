@@ -333,7 +333,7 @@ npm run build
 
 ---
 
-## 🎯 SDE Interview & Architectural Talking Points
+##  Notable Implementation Details
 
 ### 1. Robust Double-Booking Collision Detection
 - **The Challenge**: Avoiding race conditions and overlapping calendar bookings for high-demand vacation rentals.
@@ -357,6 +357,24 @@ npm run build
 - Financial amounts (`nights × rate + cleaning_fee + 14% service_fee`) are never accepted directly from client inputs. The frontend requests `/api/bookings/calculate-price` for live UI previews, but the final booking creation endpoint always re-derives the authoritative total price directly from the database record, preventing client-side price tampering.
 
 ---
+## Assumptions Made
+- Authentication is simulated via pre-seeded demo user personas (no real signup/login flow).
+- Payments are mocked; no real payment gateway is integrated.
+- Service fee is a fixed 14% applied uniformly to all bookings.
+- Same-day turnover (checkout and check-in on the same date) is permitted.
+- Listing images are sourced from Unsplash presets/URLs rather than file uploads.
+
+---
+
+## Future Enhancements
+- Real authentication (JWT-based signup/login) replacing demo user personas
+- Payment gateway integration (Stripe/Razorpay test mode)
+- Weather forecast on listing pages for trip planning
+- Map-based listing search and geolocation filtering
+- Dark mode
+- Real image upload support (S3/Cloudinary)
+
+  
 
 ## 📜 License
 This project was built as a fullstack software engineering demonstration. Released under the MIT License.
