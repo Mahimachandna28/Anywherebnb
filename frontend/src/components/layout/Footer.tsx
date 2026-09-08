@@ -41,19 +41,15 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* SDE Assignment Info */}
+          {/* Community */}
           <div>
-            <h3 className="font-semibold text-airbnb-dark mb-3">About Clone</h3>
-            <p className="text-xs text-airbnb-gray leading-relaxed mb-3">
-              Fullstack Airbnb marketplace clone built for SDE Fullstack Assignment evaluation.
-            </p>
-            <div className="flex items-center gap-1.5 text-xs text-airbnb-dark font-medium">
-              <span>Next.js 14</span>
-              <span>·</span>
-              <span>FastAPI</span>
-              <span>·</span>
-              <span>SQLite</span>
-            </div>
+            <h3 className="font-semibold text-airbnb-dark mb-3">Community</h3>
+            <ul className="space-y-2.5 text-airbnb-gray">
+              <li><span className="hover:underline cursor-pointer">Anywherebnb.org relief housing</span></li>
+              <li><span className="hover:underline cursor-pointer">Combating discrimination</span></li>
+              <li><span className="hover:underline cursor-pointer">Community forum</span></li>
+              <li><span className="hover:underline cursor-pointer">Gift cards & referrals</span></li>
+            </ul>
           </div>
         </div>
 

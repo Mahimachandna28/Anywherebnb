@@ -11,7 +11,7 @@ import { ToastContainer } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Anywherebnb: Vacation Rentals, Cabins, Beach Houses & More",
-  description: "Recreated Airbnb fullstack marketplace web application clone.",
+  description: "Find vacation rentals, cabins, beach houses, unique homes and experiences around the world on Anywherebnb.",
   icons: {
     icon: "/favicon.ico",
   },
