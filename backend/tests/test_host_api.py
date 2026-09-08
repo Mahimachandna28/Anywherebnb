@@ -115,52 +115,116 @@ def test_users_endpoints():
 
     res_all = client.get("/api/users")
     assert res_all.status_code == 200
-    assert len(res_all.json()) >= 4
+    assert len(res_all.json()) >= 6
 
-def test_multi_host_data_isolation_and_ownership():
-    # 1. Fetch all users
-    users_res = client.get("/api/users")
-    assert users_res.status_code == 200
-    users = users_res.json()
-    rahul = next(u for u in users if u["email"] == "rahul.sharma@example.com")
-    priya = next(u for u in users if u["email"] == "priya.sharma@example.com")
-    arjun = next(u for u in users if u["email"] == "arjun.kapoor@example.com")
+def test_host_ownership_isolation():
+    """Verify that each host sees ONLY their own listings and bookings."""
+    res_users = client.get("/api/users")
+    users = {u["name"]: u for u in res_users.json()}
+    
+    rahul_id = users["Rahul Sharma"]["id"]
+    priya_id = users["Priya Sharma"]["id"]
+    arjun_id = users["Arjun Nair"]["id"]
 
-    # 2. Verify Rahul's dashboard and listings
-    dash_rahul = client.get(f"/api/host/dashboard?host_id={rahul['id']}").json()
-    assert dash_rahul["host"]["name"] == "Rahul Sharma"
-    assert dash_rahul["metrics"]["active_listings_count"] == 5
+    # 1. Rahul's dashboard and listings
+    res_rahul_listings = client.get("/api/host/listings", headers={"X-User-Id": str(rahul_id)})
+    assert res_rahul_listings.status_code == 200
+    rahul_listings = res_rahul_listings.json()
+    assert len(rahul_listings) == 5
+    rahul_cities = {l["city"] for l in rahul_listings}
+    assert "Goa" in rahul_cities
+    assert "Manali" in rahul_cities
+    assert "Jaipur" in rahul_cities
 
-    listings_rahul = client.get(f"/api/host/listings?host_id={rahul['id']}").json()
-    assert len(listings_rahul) == 5
-    rahul_titles = [l["title"] for l in listings_rahul]
-    assert any("Candolim" in t for t in rahul_titles)
-    assert any("Solang" in t for t in rahul_titles)
+    res_rahul_dash = client.get("/api/host/dashboard", headers={"X-User-Id": str(rahul_id)})
+    assert res_rahul_dash.status_code == 200
+    rahul_dash = res_rahul_dash.json()
+    assert rahul_dash["host"]["name"] == "Rahul Sharma"
+    assert rahul_dash["metrics"]["active_listings_count"] == 5
+    assert len(rahul_dash["recent_reservations"]) == 2
+    guest_names = {r["guest_name"] for r in rahul_dash["recent_reservations"]}
+    assert "Aman Verma" in guest_names
+    assert "Priya Sharma" in guest_names
 
-    # 3. Verify Priya's dashboard and listings are strictly isolated
-    dash_priya = client.get(f"/api/host/dashboard?host_id={priya['id']}").json()
-    assert dash_priya["host"]["name"] == "Priya Sharma"
-    assert dash_priya["metrics"]["active_listings_count"] == 5
+    # 2. Priya's dashboard and listings (MUST NOT see Rahul's or Arjun's properties)
+    res_priya_listings = client.get("/api/host/listings", headers={"X-User-Id": str(priya_id)})
+    assert res_priya_listings.status_code == 200
+    priya_listings = res_priya_listings.json()
+    assert len(priya_listings) == 5
+    priya_cities = {l["city"] for l in priya_listings}
+    assert "Udaipur" in priya_cities
+    assert "Alleppey" in priya_cities
+    assert "Goa" not in priya_cities  # Isolation check!
 
-    listings_priya = client.get(f"/api/host/listings?host_id={priya['id']}").json()
-    assert len(listings_priya) == 5
-    priya_titles = [l["title"] for l in listings_priya]
-    assert any("Amber" in t for t in priya_titles)
-    assert any("Pichola" in t for t in priya_titles)
-    # Ensure zero overlap: Priya does not see Rahul's listings
-    for t in rahul_titles:
-        assert t not in priya_titles
+    res_priya_dash = client.get("/api/host/dashboard", headers={"X-User-Id": str(priya_id)})
+    assert res_priya_dash.status_code == 200
+    priya_dash = res_priya_dash.json()
+    assert priya_dash["host"]["name"] == "Priya Sharma"
+    assert priya_dash["metrics"]["active_listings_count"] == 5
+    assert len(priya_dash["recent_reservations"]) == 1
+    assert priya_dash["recent_reservations"][0]["guest_name"] == "Aarav Patel"
 
-    # 4. Verify Arjun's dashboard and listings are strictly isolated
-    dash_arjun = client.get(f"/api/host/dashboard?host_id={arjun['id']}").json()
-    assert dash_arjun["host"]["name"] == "Arjun Kapoor"
-    assert dash_arjun["metrics"]["active_listings_count"] == 6
+    # 3. Arjun's dashboard and listings
+    res_arjun_listings = client.get("/api/host/listings", headers={"X-User-Id": str(arjun_id)})
+    assert res_arjun_listings.status_code == 200
+    arjun_listings = res_arjun_listings.json()
+    assert len(arjun_listings) == 6
+    arjun_cities = {l["city"] for l in arjun_listings}
+    assert "Delhi" in arjun_cities
+    assert "Varanasi" in arjun_cities
+    assert "Goa" not in arjun_cities
 
-    listings_arjun = client.get(f"/api/host/listings?host_id={arjun['id']}").json()
-    assert len(listings_arjun) == 6
-    arjun_titles = [l["title"] for l in listings_arjun]
-    assert any("Indiranagar" in t for t in arjun_titles)
-    assert any("Backwaters" in t for t in arjun_titles)
-    for t in rahul_titles:
-        assert t not in arjun_titles
+    res_arjun_dash = client.get("/api/host/dashboard", headers={"X-User-Id": str(arjun_id)})
+    assert res_arjun_dash.status_code == 200
+    arjun_dash = res_arjun_dash.json()
+    assert arjun_dash["host"]["name"] == "Arjun Nair"
+    assert arjun_dash["metrics"]["active_listings_count"] == 6
+    assert len(arjun_dash["recent_reservations"]) == 1
+    assert arjun_dash["recent_reservations"][0]["guest_name"] == "Ananya Iyer"
+
+def test_host_crud_creates_under_active_host():
+    """Verify that a listing created with X-User-Id belongs to that host only."""
+    res_users = client.get("/api/users")
+    users = {u["name"]: u for u in res_users.json()}
+    priya_id = users["Priya Sharma"]["id"]
+    rahul_id = users["Rahul Sharma"]["id"]
+
+    new_listing_data = {
+        "title": "Priya's Private Kerala Backwater Villa",
+        "description": "Secluded luxury villa on Vembanad Lake.",
+        "property_type": "Villa",
+        "category": "Lakefront",
+        "room_type": "Entire place",
+        "address": "Jetty Road 1",
+        "city": "Kumarakom",
+        "state": "Kerala",
+        "country": "India",
+        "latitude": 9.6175,
+        "longitude": 76.4302,
+        "price_per_night": 12500,
+        "cleaning_fee": 1500,
+        "max_guests": 4,
+        "bedrooms": 2,
+        "beds": 2,
+        "bathrooms": 2.0,
+        "amenity_ids": [],
+        "image_urls": ["https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80"],
+    }
+
+    # Create as Priya
+    create_res = client.post("/api/listings", json=new_listing_data, headers={"X-User-Id": str(priya_id)})
+    assert create_res.status_code == 201
+    created_id = create_res.json()["id"]
+
+    # Priya must see it
+    priya_res = client.get("/api/host/listings", headers={"X-User-Id": str(priya_id)})
+    assert any(l["id"] == created_id for l in priya_res.json())
+
+    # Rahul MUST NOT see it
+    rahul_res = client.get("/api/host/listings", headers={"X-User-Id": str(rahul_id)})
+    assert not any(l["id"] == created_id for l in rahul_res.json())
+
+    # Clean up by deleting
+    del_res = client.delete(f"/api/listings/{created_id}", headers={"X-User-Id": str(priya_id)})
+    assert del_res.status_code == 204
 

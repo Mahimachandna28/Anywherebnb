@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
 type TripFilter = "all" | "confirmed" | "completed" | "cancelled";
 
 const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80";
+  "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=800&q=80";
 
 function TripsContent() {
   const toast = useToast();

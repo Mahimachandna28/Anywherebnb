@@ -17,13 +17,8 @@ interface PhotoModalProps {
   listingId: number;
 }
 
-const FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-];
+const GENERIC_FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=1200&q=80";
 
 export function PhotoModal({
   isOpen,
@@ -40,20 +35,22 @@ export function PhotoModal({
 
   const isSaved = isWishlisted(listingId);
 
-  // Normalize images
+  // Normalize images: never mix images from other listings
   const photoList = React.useMemo(() => {
     if (images && images.length > 0) {
       return [...images].sort((a, b) => a.display_order - b.display_order);
     }
-    return FALLBACK_IMAGES.map((url, idx) => ({
-      id: idx + 1,
-      listing_id: listingId,
-      image_url: url,
-      caption: `View ${idx + 1}`,
-      display_order: idx,
-      is_cover: idx === 0,
-    }));
-  }, [images, listingId]);
+    return [
+      {
+        id: 1,
+        listing_id: listingId,
+        image_url: GENERIC_FALLBACK_IMAGE,
+        caption: title || "Property View",
+        display_order: 0,
+        is_cover: true,
+      },
+    ];
+  }, [images, listingId, title]);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);

@@ -11,13 +11,8 @@ interface PhotoCollageProps {
   onOpenModal: (initialIndex?: number) => void;
 }
 
-const FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80",
-];
+const GENERIC_FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=1200&q=80";
 
 export function PhotoCollage({
   images,
@@ -27,6 +22,7 @@ export function PhotoCollage({
   const [mobileIndex, setMobileIndex] = useState(0);
 
   // Normalize images to ensure at least 5 photos for the collage
+  // CRITICAL: NEVER mix images between properties. Always use the listing's own photos.
   const sortedImages = useMemo(() => {
     let urls: string[] = [];
     if (images && images.length > 0) {
@@ -35,9 +31,19 @@ export function PhotoCollage({
         .map((img) => img.image_url);
     }
 
-    // Fill in fallbacks if fewer than 5 images
+    if (urls.length === 0) {
+      return [
+        GENERIC_FALLBACK_IMAGE,
+        GENERIC_FALLBACK_IMAGE,
+        GENERIC_FALLBACK_IMAGE,
+        GENERIC_FALLBACK_IMAGE,
+        GENERIC_FALLBACK_IMAGE,
+      ];
+    }
+
+    const initialCount = urls.length;
     while (urls.length < 5) {
-      urls.push(FALLBACK_IMAGES[urls.length % FALLBACK_IMAGES.length]);
+      urls.push(urls[urls.length % initialCount]);
     }
     return urls;
   }, [images]);

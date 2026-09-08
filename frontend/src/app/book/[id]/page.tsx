@@ -201,8 +201,9 @@ function CheckoutContent() {
 
   const coverImage =
     listing.images && listing.images.length > 0
-      ? listing.images[0].image_url
-      : "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80";
+      ? listing.images.find((img) => img.is_cover)?.image_url ||
+        listing.images[0].image_url
+      : "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=800&q=80";
 
   return (
     <div className="min-h-screen bg-white">

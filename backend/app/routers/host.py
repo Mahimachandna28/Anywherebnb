@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.core.database import get_db
@@ -8,23 +8,16 @@ from app.schemas.listing import ListingResponse
 router = APIRouter(prefix="/host", tags=["Host"])
 
 def get_current_host(
+    x_user_id: int | None = Header(None, alias="X-User-Id"),
     host_id: int | None = Query(None),
     db: Session = Depends(get_db),
 ) -> User:
-    """
-    Resolves active host:
-    1. If explicit host_id is provided, lookup that user.
-    2. Default to primary host Rahul Sharma (rahul.sharma@example.com).
-    3. Fallback to Rohan Mehta or any host user.
-    """
-    if host_id is not None:
-        host = db.query(User).filter(User.id == host_id).first()
+    target_id = host_id or x_user_id
+    if target_id is not None:
+        host = db.query(User).filter(User.id == target_id).first()
         if host:
             return host
-
     host = db.query(User).filter(User.email == "rahul.sharma@example.com").first()
-    if not host:
-        host = db.query(User).filter(User.email == "rohan.mehta@example.com").first()
     if not host:
         host = db.query(User).filter(User.role.in_(["host", "both"])).first()
     if not host:
