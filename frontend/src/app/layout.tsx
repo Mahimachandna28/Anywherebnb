@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { UserProvider } from "@/context/UserContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { FilterProvider } from "@/context/FilterContext";
@@ -23,23 +24,32 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="min-h-screen flex flex-col bg-white text-airbnb-dark antialiased">
-        <UserProvider>
-          <ToastProvider>
-            <WishlistProvider>
-              <FilterProvider>
-                <Navbar />
-                <div className="flex-1">
-                  {children}
-                </div>
-                <Footer />
-                <FilterModal />
-                <ToastContainer />
-              </FilterProvider>
-            </WishlistProvider>
-          </ToastProvider>
-        </UserProvider>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('anywherebnb_theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}else{document.documentElement.classList.remove('dark');document.documentElement.style.colorScheme='light';}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen flex flex-col bg-white dark:bg-[#121212] text-airbnb-dark dark:text-neutral-100 antialiased transition-colors duration-200">
+        <ThemeProvider>
+          <UserProvider>
+            <ToastProvider>
+              <WishlistProvider>
+                <FilterProvider>
+                  <Navbar />
+                  <div className="flex-1">
+                    {children}
+                  </div>
+                  <Footer />
+                  <FilterModal />
+                  <ToastContainer />
+                </FilterProvider>
+              </WishlistProvider>
+            </ToastProvider>
+          </UserProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

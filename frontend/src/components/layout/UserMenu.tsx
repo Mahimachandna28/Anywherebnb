@@ -3,14 +3,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, Globe, HelpCircle, ShieldCheck } from "lucide-react";
+import { Menu, Globe, HelpCircle, ShieldCheck, Moon, Sun } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useToast } from "@/context/ToastContext";
+import { useTheme } from "@/context/ThemeContext";
 import { HostIllustration } from "@/components/layout/HostIllustration";
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
   const {
     currentUser,
     currentRole,
@@ -100,6 +102,35 @@ export function UserMenu() {
                 <span className="text-[15px] font-normal text-neutral-800">
                   Help Centre
                 </span>
+              </button>
+
+              {/* Theme Toggle (Light / Dark Mode) */}
+              <button
+                type="button"
+                onClick={() => toggleTheme()}
+                className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-neutral-50 cursor-pointer transition text-neutral-800 text-left"
+              >
+                <div className="flex items-center gap-3.5">
+                  {theme === "dark" ? (
+                    <Sun className="w-5 h-5 text-amber-500 stroke-[1.75]" />
+                  ) : (
+                    <Moon className="w-5 h-5 text-neutral-800 stroke-[1.75]" />
+                  )}
+                  <span className="text-[15px] font-normal text-neutral-800">
+                    {theme === "dark" ? "Light mode" : "Dark mode"}
+                  </span>
+                </div>
+                <div
+                  className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 ${
+                    theme === "dark" ? "bg-[#FF385C]" : "bg-neutral-300"
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                      theme === "dark" ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </div>
               </button>
 
               <div className="border-t border-neutral-200/80 my-1" />
@@ -265,6 +296,35 @@ export function UserMenu() {
               >
                 <HelpCircle className="w-4 h-4 text-neutral-600" />
                 <span className="text-[15px] font-normal">Help Centre</span>
+              </button>
+
+              {/* Theme Toggle (Light / Dark Mode) */}
+              <button
+                type="button"
+                onClick={() => toggleTheme()}
+                className="w-full flex items-center justify-between px-5 py-2.5 hover:bg-neutral-50 transition text-neutral-800 text-left"
+              >
+                <div className="flex items-center gap-3.5">
+                  {theme === "dark" ? (
+                    <Sun className="w-5 h-5 text-amber-500 stroke-[1.75]" />
+                  ) : (
+                    <Moon className="w-5 h-5 text-neutral-800 stroke-[1.75]" />
+                  )}
+                  <span className="text-[15px] font-normal">
+                    {theme === "dark" ? "Light mode" : "Dark mode"}
+                  </span>
+                </div>
+                <div
+                  className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 ${
+                    theme === "dark" ? "bg-[#FF385C]" : "bg-neutral-300"
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                      theme === "dark" ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </div>
               </button>
 
               <div className="border-t border-neutral-200/80 my-1" />

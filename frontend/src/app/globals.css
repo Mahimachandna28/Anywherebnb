@@ -7,6 +7,13 @@
 :root {
   --foreground-rgb: 34, 34, 34;
   --background-rgb: 255, 255, 255;
+  color-scheme: light;
+}
+
+.dark {
+  --foreground-rgb: 243, 244, 246;
+  --background-rgb: 18, 18, 18;
+  color-scheme: dark;
 }
 
 body {
@@ -15,6 +22,137 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   Dark Mode System Adapters (Airbnb Dark Theme)
+   ========================================================================== */
+
+/* Dark Mode Surfaces */
+.dark .bg-white {
+  background-color: #1e1e1e !important;
+}
+.dark .bg-neutral-50,
+.dark .bg-gray-50 {
+  background-color: #181818 !important;
+}
+.dark .bg-neutral-100,
+.dark .bg-gray-100,
+.dark .bg-airbnb-lightGray {
+  background-color: #262626 !important;
+}
+.dark .bg-neutral-200,
+.dark .bg-gray-200 {
+  background-color: #333333 !important;
+}
+
+.dark .bg-white\/95 {
+  background-color: rgba(30, 30, 30, 0.95) !important;
+}
+.dark .bg-white\/90 {
+  background-color: rgba(30, 30, 30, 0.9) !important;
+}
+.dark .bg-white\/80 {
+  background-color: rgba(30, 30, 30, 0.8) !important;
+}
+
+/* Dark Mode Borders */
+.dark .border-neutral-100,
+.dark .border-neutral-200,
+.dark .border-neutral-200\/80,
+.dark .border-neutral-200\/90,
+.dark .border-neutral-300,
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300,
+.dark .border-airbnb-border {
+  border-color: #2f2f2f !important;
+}
+.dark .border-neutral-800 {
+  border-color: #4a4a4a !important;
+}
+.dark .border-neutral-900 {
+  border-color: #f3f4f6 !important;
+}
+.dark .hover\:border-neutral-900:hover {
+  border-color: #e5e7eb !important;
+}
+
+/* Dark Mode Text Colors */
+.dark .text-neutral-900,
+.dark .text-neutral-800,
+.dark .text-airbnb-dark,
+.dark .text-gray-900,
+.dark .text-gray-800 {
+  color: #f3f4f6 !important;
+}
+.dark .text-neutral-700,
+.dark .text-neutral-600,
+.dark .text-gray-700,
+.dark .text-gray-600 {
+  color: #d1d5db !important;
+}
+.dark .text-neutral-500,
+.dark .text-gray-500,
+.dark .text-airbnb-gray {
+  color: #a1a1aa !important;
+}
+.dark .text-neutral-400,
+.dark .text-gray-400 {
+  color: #71717a !important;
+}
+.dark .text-black {
+  color: #f3f4f6 !important;
+}
+.dark .focus-within\:ring-neutral-900:focus-within {
+  --tw-ring-color: #f3f4f6 !important;
+}
+
+/* Dark Mode Hovers */
+.dark .hover\:bg-neutral-50:hover,
+.dark .hover\:bg-gray-50:hover {
+  background-color: #292929 !important;
+}
+.dark .hover\:bg-neutral-100:hover,
+.dark .hover\:bg-gray-100:hover {
+  background-color: #333333 !important;
+}
+.dark .hover\:bg-neutral-200\/80:hover {
+  background-color: #3d3d3d !important;
+}
+
+/* Dark Mode Form Inputs */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+.dark select,
+.dark textarea {
+  background-color: #252525 !important;
+  color: #f3f4f6 !important;
+  border-color: #383838 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #71717a !important;
+}
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #FF385C !important;
+  outline: none !important;
+}
+
+/* Dark Mode Dropdown Shadows */
+.dark .shadow-airbnb,
+.dark .shadow-airbnbHover,
+.dark .shadow-airbnbModal,
+.dark .shadow-2xl,
+.dark .shadow-xl,
+.dark .shadow-lg {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dark Mode Map Layer Tone */
+.dark .leaflet-container {
+  filter: brightness(0.88) contrast(1.08);
 }
 
 /* Custom scrollbar hiding utility */
