@@ -24,6 +24,7 @@ import { Listing, Amenity } from "@/types";
 import { fetchApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/formatters";
 import { useToast } from "@/context/ToastContext";
+import { useUser } from "@/context/UserContext";
 import { cn } from "@/lib/utils";
 
 interface ListingWizardFormProps {
@@ -110,6 +111,7 @@ export function ListingWizardForm({
 }: ListingWizardFormProps) {
   const router = useRouter();
   const toast = useToast();
+  const { currentUser } = useUser();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -273,14 +275,15 @@ export function ListingWizardForm({
     };
 
     try {
+      const hostParam = currentUser?.id ? `?host_id=${currentUser.id}` : "";
       if (isEditing && initialData) {
-        await fetchApi<Listing>(`/listings/${initialData.id}`, {
+        await fetchApi<Listing>(`/listings/${initialData.id}${hostParam}`, {
           method: "PUT",
           body: JSON.stringify(payload),
         });
         toast.success("Listing updated successfully!");
       } else {
-        await fetchApi<Listing>("/listings", {
+        await fetchApi<Listing>(`/listings${hostParam}`, {
           method: "POST",
           body: JSON.stringify(payload),
         });

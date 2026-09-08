@@ -13,20 +13,9 @@ from app.schemas.amenity import AmenityResponse
 from app.schemas.category import CategoryItem
 from app.services.listing_service import search_listings
 from app.services.availability_service import get_booked_dates_for_listing
+from app.routers.host import get_current_host
 
 router = APIRouter(tags=["Listings"])
-
-def get_current_host(db: Session = Depends(get_db)) -> User:
-    """
-    Returns the active demo host user (Rohan Mehta).
-    In production, this would be derived from JWT token claims.
-    """
-    host = db.query(User).filter(User.email == "rohan.mehta@example.com").first()
-    if not host:
-        host = db.query(User).filter(User.role.in_(["host", "both"])).first()
-    if not host:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active host user found.")
-    return host
 
 # Static metadata for Airbnb categories
 CATEGORIES_LIST: list[CategoryItem] = [

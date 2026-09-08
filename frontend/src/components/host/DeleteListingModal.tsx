@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { AlertTriangle, X, Trash2 } from "lucide-react";
 import { Listing } from "@/types";
 import { fetchApi } from "@/lib/api";
+import { useUser } from "@/context/UserContext";
 
 interface DeleteListingModalProps {
   listing: Listing | null;
@@ -18,6 +19,7 @@ export function DeleteListingModal({
   onClose,
   onDeleted,
 }: DeleteListingModalProps) {
+  const { currentUser } = useUser();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,8 @@ export function DeleteListingModal({
     setError(null);
 
     try {
-      await fetchApi<void>(`/listings/${listing.id}`, {
+      const hostParam = currentUser?.id ? `?host_id=${currentUser.id}` : "";
+      await fetchApi<void>(`/listings/${listing.id}${hostParam}`, {
         method: "DELETE",
       });
       onDeleted(listing.id);

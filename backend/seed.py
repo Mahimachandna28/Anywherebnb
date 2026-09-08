@@ -30,25 +30,33 @@ def seed_database():
 
         print("Seeding Users...")
         # 1. Authentic Indian Users (Hosts and Guests)
+        rahul = User(
+            name="Rahul Sharma",
+            email="rahul.sharma@example.com",
+            avatar_url="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80",
+            is_superhost=True,
+            role="both",
+            joined_date=datetime(2020, 8, 24, tzinfo=timezone.utc),
+        )
         priya = User(
             name="Priya Sharma",
             email="priya.sharma@example.com",
             avatar_url="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
             is_superhost=True,
-            role="both",
+            role="host",
             joined_date=datetime(2021, 4, 12, tzinfo=timezone.utc),
         )
-        rohan = User(
-            name="Rohan Mehta",
-            email="rohan.mehta@example.com",
-            avatar_url="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80",
+        arjun = User(
+            name="Arjun Kapoor",
+            email="arjun.kapoor@example.com",
+            avatar_url="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
             is_superhost=True,
             role="host",
-            joined_date=datetime(2020, 8, 24, tzinfo=timezone.utc),
+            joined_date=datetime(2021, 9, 15, tzinfo=timezone.utc),
         )
-        aarav = User(
-            name="Aarav Patel",
-            email="aarav.patel@example.com",
+        aman = User(
+            name="Aman Gupta",
+            email="aman.gupta@example.com",
             avatar_url="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
             is_superhost=False,
             role="guest",
@@ -62,8 +70,16 @@ def seed_database():
             role="guest",
             joined_date=datetime(2023, 6, 18, tzinfo=timezone.utc),
         )
+        aarav = User(
+            name="Aarav Patel",
+            email="aarav.patel@example.com",
+            avatar_url="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
+            is_superhost=False,
+            role="guest",
+            joined_date=datetime(2022, 5, 20, tzinfo=timezone.utc),
+        )
 
-        db.add_all([priya, rohan, aarav, ananya])
+        db.add_all([rahul, priya, arjun, aman, ananya, aarav])
         db.commit()
 
         print("Seeding Amenities...")
@@ -106,7 +122,7 @@ def seed_database():
         listings_data = [
             # 1. Goa - Candolim Beachfront
             {
-                "host": rohan,
+                "host": rahul,
                 "title": "Villa Candolim - Luxury Portuguese Coastal Estate",
                 "description": "Perched steps from the golden sands of Candolim, this restored Portuguese heritage villa blends antique colonial architecture with contemporary luxury. Features an azure private pool, lush tropical gardens, sun decks, and an open-air veranda ideal for evening sea breezes.",
                 "property_type": "Villa",
@@ -170,7 +186,7 @@ def seed_database():
             },
             # 3. Manali - Solang Pine Chalet
             {
-                "host": rohan,
+                "host": rahul,
                 "title": "Solang Pine Chalet - Himalayan Cedar Mountain Retreat",
                 "description": "Surrounded by snow-capped peaks and towering deodar forests, this handcrafted cedar timber chalet offers ski-in/ski-out access in the Solang Valley. Features a stone fireplace, heated mountain-view hot tub, private apple orchard, and warm Himalayan pine interiors.",
                 "property_type": "Cabin",
@@ -234,7 +250,7 @@ def seed_database():
             },
             # 5. Munnar / Kerala - Tea Plantation Estate
             {
-                "host": rohan,
+                "host": priya,
                 "title": "Mist Valley - Eco Tea Plantation Bungalow",
                 "description": "Nestled amid 50 acres of rolling emerald tea gardens in the misty Western Ghats. Wake up to swirling morning clouds, birdsong, and fresh Nilgiri tea. Features timber verandas, fireplace, organic orchard dining, and guided plantation walking trails.",
                 "property_type": "Cottage",
@@ -266,7 +282,7 @@ def seed_database():
             },
             # 6. Mumbai - Bandra Seaside Penthouse
             {
-                "host": priya,
+                "host": rahul,
                 "title": "Bandra Seaside Loft - Art Deco Terrace Penthouse",
                 "description": "High above Mumbai's most vibrant coastal neighborhood, this sun-drenched Bandra West duplex offers panoramic views of the Arabian Sea. Steps away from artisan cafes and Pali Hill. Features floor-to-ceiling glass, private rooftop terrace, and curated contemporary Indian art.",
                 "property_type": "Loft",
@@ -298,7 +314,7 @@ def seed_database():
             },
             # 7. Delhi - Lutyens Heritage Residence
             {
-                "host": rohan,
+                "host": priya,
                 "title": "Lutyens Heritage Residence - Mughal Gardens & Terrace",
                 "description": "An aristocratic sanctuary in the prestigious heart of New Delhi. Sprawling lawns shaded by mature neem and amaltas trees, high colonial ceilings, handcrafted teak furniture, private library, and peaceful shaded verandahs just minutes from India Gate.",
                 "property_type": "Townhouse",
@@ -330,7 +346,7 @@ def seed_database():
             },
             # 8. Rishikesh - Ganga Bliss Sanctuary
             {
-                "host": priya,
+                "host": rahul,
                 "title": "Ganga Bliss - Sacred Riverside Yoga Sanctuary",
                 "description": "Overlooking the emerald holy waters of the Ganga and forested foothills of the Himalayas in Tapovan. Enjoy sunrise yoga on the private hardwood meditation deck, tranquil river sounds, organic herbal gardens, and peaceful evening Aarti ambiance.",
                 "property_type": "Guesthouse",
@@ -362,7 +378,7 @@ def seed_database():
             },
             # 9. Varanasi - Assi Ghat Heritage Home
             {
-                "host": rohan,
+                "host": priya,
                 "title": "Ghat View Heritage Home - Sunrise Over Holy Ganges",
                 "description": "Steeped in history right above Assi Ghat, this lovingly restored centuries-old riverside haveli offers private rooftop views of morning sunrise ceremonies, temple bells, and serene riverboats gliding past. Traditional courtyard living at its most spiritual.",
                 "property_type": "House",
@@ -394,7 +410,7 @@ def seed_database():
             },
             # 10. Bengaluru - Indiranagar Garden Penthouse
             {
-                "host": priya,
+                "host": arjun,
                 "title": "Indiranagar Green Oasis - Contemporary Garden Penthouse",
                 "description": "Tucked away on a leafy 100 Feet Road boulevard in Indiranagar, this modern architectural duplex boasts a lush private terrace garden, gigabit fiber workspace, ergonomic setup, and sleek open-concept kitchen. Steps away from Bengaluru's finest brewpubs and cafes.",
                 "property_type": "Apartment",
@@ -426,7 +442,7 @@ def seed_database():
             },
             # 11. Alleppey / Kerala - Backwaters Houseboat
             {
-                "host": rohan,
+                "host": arjun,
                 "title": "Backwaters Royale - Luxury Floating Heritage Houseboat",
                 "description": "Glide through the tranquil palms and lotus canals of Vembanad Lake aboard this handcrafted wooden Kettuvallam houseboat. Complete with air-conditioned glass suites, sundeck jacuzzi, private butler service, and freshly caught Karimeen dinners prepared on board.",
                 "property_type": "House",
@@ -458,7 +474,7 @@ def seed_database():
             },
             # 12. Ooty - Nilgiri Colonial Cottage
             {
-                "host": priya,
+                "host": arjun,
                 "title": "Nilgiri Mist - British Colonial Cloudview Cottage",
                 "description": "Perched on a quiet hill slope with views across the Nilgiri blue mountains, this 1920s stone cottage features high wooden ceilings, working stone hearth, English rose gardens, afternoon tea lawn, and cozy bay windows overlooking eucalyptus groves.",
                 "property_type": "Cottage",
@@ -490,7 +506,7 @@ def seed_database():
             },
             # 13. Pune - Sahyadri Valley Plunge Pool Villa
             {
-                "host": rohan,
+                "host": rahul,
                 "title": "Sahyadri Valley Villa - Private Plunge Pool & Deck",
                 "description": "Perched on the cliff edge of the Sahyadri mountains near Lonavala, this glass-and-stone designer villa offers jaw-dropping waterfall views during the monsoons. Features a heated cantilevered plunge pool, sunken amphitheater seating, and barbecue deck.",
                 "property_type": "Villa",
@@ -522,7 +538,7 @@ def seed_database():
             },
             # 14. Kolkata - Colonial Alipore Manor
             {
-                "host": priya,
+                "host": arjun,
                 "title": "Colonial Manor - Grand Heritage Suite with Courtyard",
                 "description": "Experience old-world Calcutta charm in the leafy neighborhood of Alipore. Soaring 18-foot ceilings, Burmese teak flooring, sprawling verandahs, antique book collections, and a quiet private courtyard garden shaded by royal palms.",
                 "property_type": "Apartment",
@@ -554,7 +570,7 @@ def seed_database():
             },
             # 15. Chennai - Coromandel Coast Beach Villa
             {
-                "host": rohan,
+                "host": arjun,
                 "title": "Coromandel Shores - Modern Beach Villa on ECR",
                 "description": "Directly facing the Bay of Bengal along Chennai's scenic East Coast Road. Features private beach access, a sparkling lap pool, breezy ocean-facing terraces, contemporary tropical architecture, and serene coconut groves for the ultimate coastal getaway.",
                 "property_type": "Villa",
@@ -586,7 +602,7 @@ def seed_database():
             },
             # 16. Hyderabad - Nizam's Crest Jubilee Hills Pool Villa
             {
-                "host": priya,
+                "host": arjun,
                 "title": "Nizam\'s Crest - Luxury Pool Villa in Jubilee Hills",
                 "description": "Perched on a quiet hill in Hyderabad's premier enclave of Jubilee Hills. Inspired by royal Deccan elegance, this architectural villa features an illuminated outdoor pool, granite courtyard, home cinema room, and expansive city skyline vistas.",
                 "property_type": "Villa",
@@ -671,9 +687,10 @@ def seed_database():
         # 4. Pre-existing bookings
         today = date.today()
         sample_bookings = [
+            # --- Rahul's listings bookings ---
             Booking(
-                listing_id=created_listings[0].id,  # Goa Villa
-                guest_id=aarav.id,
+                listing_id=created_listings[0].id,  # Goa Villa (Rahul)
+                guest_id=aman.id,
                 check_in_date=today + timedelta(days=5),
                 check_out_date=today + timedelta(days=9),
                 total_guests=2,
@@ -687,7 +704,7 @@ def seed_database():
                 payment_method="UPI / GPay",
             ),
             Booking(
-                listing_id=created_listings[0].id,
+                listing_id=created_listings[0].id,  # Goa Villa (Rahul)
                 guest_id=ananya.id,
                 check_in_date=today + timedelta(days=15),
                 check_out_date=today + timedelta(days=20),
@@ -703,7 +720,38 @@ def seed_database():
                 payment_method="Credit Card",
             ),
             Booking(
-                listing_id=created_listings[1].id,  # Jaipur Haveli
+                listing_id=created_listings[2].id,  # Manali Chalet (Rahul)
+                guest_id=aman.id,
+                check_in_date=today + timedelta(days=10),
+                check_out_date=today + timedelta(days=14),
+                total_guests=2,
+                adults=2,
+                nightly_rate=created_listings[2].price_per_night,
+                total_nights=4,
+                cleaning_fee=created_listings[2].cleaning_fee,
+                service_fee=int(created_listings[2].price_per_night * 4 * 0.14),
+                total_price=(created_listings[2].price_per_night * 4) + created_listings[2].cleaning_fee + int(created_listings[2].price_per_night * 4 * 0.14),
+                status="confirmed",
+                payment_method="Net Banking",
+            ),
+            Booking(
+                listing_id=created_listings[5].id,  # Mumbai Loft (Rahul)
+                guest_id=ananya.id,
+                check_in_date=today + timedelta(days=8),
+                check_out_date=today + timedelta(days=11),
+                total_guests=2,
+                adults=2,
+                nightly_rate=created_listings[5].price_per_night,
+                total_nights=3,
+                cleaning_fee=created_listings[5].cleaning_fee,
+                service_fee=int(created_listings[5].price_per_night * 3 * 0.14),
+                total_price=(created_listings[5].price_per_night * 3) + created_listings[5].cleaning_fee + int(created_listings[5].price_per_night * 3 * 0.14),
+                status="confirmed",
+                payment_method="UPI / Paytm",
+            ),
+            # --- Priya's listings bookings ---
+            Booking(
+                listing_id=created_listings[1].id,  # Jaipur Haveli (Priya)
                 guest_id=aarav.id,
                 check_in_date=today + timedelta(days=10),
                 check_out_date=today + timedelta(days=14),
@@ -717,6 +765,83 @@ def seed_database():
                 status="confirmed",
                 payment_method="Net Banking",
             ),
+            Booking(
+                listing_id=created_listings[3].id,  # Udaipur Haveli (Priya)
+                guest_id=ananya.id,
+                check_in_date=today + timedelta(days=16),
+                check_out_date=today + timedelta(days=20),
+                total_guests=3,
+                adults=2,
+                children=1,
+                nightly_rate=created_listings[3].price_per_night,
+                total_nights=4,
+                cleaning_fee=created_listings[3].cleaning_fee,
+                service_fee=int(created_listings[3].price_per_night * 4 * 0.14),
+                total_price=(created_listings[3].price_per_night * 4) + created_listings[3].cleaning_fee + int(created_listings[3].price_per_night * 4 * 0.14),
+                status="confirmed",
+                payment_method="Credit Card",
+            ),
+            Booking(
+                listing_id=created_listings[4].id,  # Munnar Bungalow (Priya)
+                guest_id=aman.id,
+                check_in_date=today + timedelta(days=22),
+                check_out_date=today + timedelta(days=26),
+                total_guests=2,
+                adults=2,
+                nightly_rate=created_listings[4].price_per_night,
+                total_nights=4,
+                cleaning_fee=created_listings[4].cleaning_fee,
+                service_fee=int(created_listings[4].price_per_night * 4 * 0.14),
+                total_price=(created_listings[4].price_per_night * 4) + created_listings[4].cleaning_fee + int(created_listings[4].price_per_night * 4 * 0.14),
+                status="confirmed",
+                payment_method="UPI / GPay",
+            ),
+            # --- Arjun's listings bookings ---
+            Booking(
+                listing_id=created_listings[9].id,  # Bengaluru Penthouse (Arjun)
+                guest_id=ananya.id,
+                check_in_date=today + timedelta(days=6),
+                check_out_date=today + timedelta(days=10),
+                total_guests=2,
+                adults=2,
+                nightly_rate=created_listings[9].price_per_night,
+                total_nights=4,
+                cleaning_fee=created_listings[9].cleaning_fee,
+                service_fee=int(created_listings[9].price_per_night * 4 * 0.14),
+                total_price=(created_listings[9].price_per_night * 4) + created_listings[9].cleaning_fee + int(created_listings[9].price_per_night * 4 * 0.14),
+                status="confirmed",
+                payment_method="Credit Card",
+            ),
+            Booking(
+                listing_id=created_listings[10].id,  # Alleppey Houseboat (Arjun)
+                guest_id=aman.id,
+                check_in_date=today + timedelta(days=12),
+                check_out_date=today + timedelta(days=16),
+                total_guests=2,
+                adults=2,
+                nightly_rate=created_listings[10].price_per_night,
+                total_nights=4,
+                cleaning_fee=created_listings[10].cleaning_fee,
+                service_fee=int(created_listings[10].price_per_night * 4 * 0.14),
+                total_price=(created_listings[10].price_per_night * 4) + created_listings[10].cleaning_fee + int(created_listings[10].price_per_night * 4 * 0.14),
+                status="confirmed",
+                payment_method="UPI / GPay",
+            ),
+            Booking(
+                listing_id=created_listings[14].id,  # Chennai Villa (Arjun)
+                guest_id=aarav.id,
+                check_in_date=today + timedelta(days=18),
+                check_out_date=today + timedelta(days=22),
+                total_guests=4,
+                adults=4,
+                nightly_rate=created_listings[14].price_per_night,
+                total_nights=4,
+                cleaning_fee=created_listings[14].cleaning_fee,
+                service_fee=int(created_listings[14].price_per_night * 4 * 0.14),
+                total_price=(created_listings[14].price_per_night * 4) + created_listings[14].cleaning_fee + int(created_listings[14].price_per_night * 4 * 0.14),
+                status="confirmed",
+                payment_method="Net Banking",
+            ),
         ]
         db.add_all(sample_bookings)
 
@@ -725,7 +850,7 @@ def seed_database():
         sample_reviews = [
             Review(
                 listing_id=created_listings[0].id,
-                guest_id=aarav.id,
+                guest_id=aman.id,
                 rating=5.0,
                 cleanliness=5,
                 accuracy=5,
@@ -733,7 +858,7 @@ def seed_database():
                 location=5,
                 check_in=5,
                 value=5,
-                comment="Unbelievable coastal retreat! Waking up to the sea breeze in North Goa from the private pool was an experience we will never forget. Rohan was a gracious superhost.",
+                comment="Unbelievable coastal retreat! Waking up to the sea breeze in North Goa from the private pool was an experience we will never forget. Rahul was a gracious superhost.",
             ),
             Review(
                 listing_id=created_listings[0].id,
@@ -771,17 +896,33 @@ def seed_database():
                 value=5,
                 comment="True Himalayan luxury. The pine aroma, heated cedar bedrooms, and snowcapped peaks visible from the balcony made this trip to Manali unforgettable.",
             ),
+            Review(
+                listing_id=created_listings[9].id,
+                guest_id=ananya.id,
+                rating=4.9,
+                cleanliness=5,
+                accuracy=5,
+                communication=5,
+                location=5,
+                check_in=5,
+                value=5,
+                comment="Stunning Indiranagar duplex! Beautiful terrace garden and lightning-fast wifi made working remotely from Bangalore an absolute joy.",
+            ),
         ]
         db.add_all(sample_reviews)
 
         print("Seeding Wishlists...")
-        # 6. Sample Wishlist items
+        # 6. Sample Wishlist items for multiple users
         db.add(Wishlist(user_id=aarav.id, listing_id=created_listings[0].id))
         db.add(Wishlist(user_id=aarav.id, listing_id=created_listings[3].id))
         db.add(Wishlist(user_id=ananya.id, listing_id=created_listings[1].id))
+        db.add(Wishlist(user_id=ananya.id, listing_id=created_listings[2].id))
+        db.add(Wishlist(user_id=aman.id, listing_id=created_listings[0].id))
+        db.add(Wishlist(user_id=aman.id, listing_id=created_listings[5].id))
+        db.add(Wishlist(user_id=aman.id, listing_id=created_listings[9].id))
 
         db.commit()
-        print(" Successfully seeded database with 4 Indian users, 20 amenities, 16 Indian listings, 3 bookings, 4 reviews, and 3 wishlists!")
+        print(" Successfully seeded database with 6 Indian users (3 hosts, 3 guests), 20 amenities, 16 Indian listings, 10 bookings, 5 reviews, and 7 wishlists!")
 
     except Exception as e:
         db.rollback()

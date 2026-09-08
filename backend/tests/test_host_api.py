@@ -116,3 +116,51 @@ def test_users_endpoints():
     res_all = client.get("/api/users")
     assert res_all.status_code == 200
     assert len(res_all.json()) >= 4
+
+def test_multi_host_data_isolation_and_ownership():
+    # 1. Fetch all users
+    users_res = client.get("/api/users")
+    assert users_res.status_code == 200
+    users = users_res.json()
+    rahul = next(u for u in users if u["email"] == "rahul.sharma@example.com")
+    priya = next(u for u in users if u["email"] == "priya.sharma@example.com")
+    arjun = next(u for u in users if u["email"] == "arjun.kapoor@example.com")
+
+    # 2. Verify Rahul's dashboard and listings
+    dash_rahul = client.get(f"/api/host/dashboard?host_id={rahul['id']}").json()
+    assert dash_rahul["host"]["name"] == "Rahul Sharma"
+    assert dash_rahul["metrics"]["active_listings_count"] == 5
+
+    listings_rahul = client.get(f"/api/host/listings?host_id={rahul['id']}").json()
+    assert len(listings_rahul) == 5
+    rahul_titles = [l["title"] for l in listings_rahul]
+    assert any("Candolim" in t for t in rahul_titles)
+    assert any("Solang" in t for t in rahul_titles)
+
+    # 3. Verify Priya's dashboard and listings are strictly isolated
+    dash_priya = client.get(f"/api/host/dashboard?host_id={priya['id']}").json()
+    assert dash_priya["host"]["name"] == "Priya Sharma"
+    assert dash_priya["metrics"]["active_listings_count"] == 5
+
+    listings_priya = client.get(f"/api/host/listings?host_id={priya['id']}").json()
+    assert len(listings_priya) == 5
+    priya_titles = [l["title"] for l in listings_priya]
+    assert any("Amber" in t for t in priya_titles)
+    assert any("Pichola" in t for t in priya_titles)
+    # Ensure zero overlap: Priya does not see Rahul's listings
+    for t in rahul_titles:
+        assert t not in priya_titles
+
+    # 4. Verify Arjun's dashboard and listings are strictly isolated
+    dash_arjun = client.get(f"/api/host/dashboard?host_id={arjun['id']}").json()
+    assert dash_arjun["host"]["name"] == "Arjun Kapoor"
+    assert dash_arjun["metrics"]["active_listings_count"] == 6
+
+    listings_arjun = client.get(f"/api/host/listings?host_id={arjun['id']}").json()
+    assert len(listings_arjun) == 6
+    arjun_titles = [l["title"] for l in listings_arjun]
+    assert any("Indiranagar" in t for t in arjun_titles)
+    assert any("Backwaters" in t for t in arjun_titles)
+    for t in rahul_titles:
+        assert t not in arjun_titles
+

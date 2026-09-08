@@ -102,15 +102,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const toggleRole = () => {
     if (currentRole === "guest") {
-      // Find a host user
-      const hostUser = allUsers.find((u) => u.is_superhost || u.role === "host");
+      // Find primary host user Rahul Sharma
+      const hostUser =
+        allUsers.find((u) => u.email === "rahul.sharma@example.com") ||
+        allUsers.find((u) => u.is_superhost || u.role === "host" || u.role === "both");
       if (hostUser) {
         setCurrentUser(hostUser);
+        setIsLoggedIn(true);
       }
       setCurrentRole("host");
     } else {
       // Find a guest user
-      const guestUser = allUsers.find((u) => u.role === "guest");
+      const guestUser =
+        allUsers.find((u) => u.email === "aman.gupta@example.com") ||
+        allUsers.find((u) => u.role === "guest");
       if (guestUser) {
         setCurrentUser(guestUser);
       }

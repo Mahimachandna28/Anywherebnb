@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 export default function HostDashboardPage() {
   const router = useRouter();
   const toast = useToast();
-  const { currentRole, toggleRole } = useUser();
+  const { currentUser, currentRole, toggleRole } = useUser();
 
   const [dashboardData, setDashboardData] = useState<HostDashboardData | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -45,9 +45,10 @@ export default function HostDashboardPage() {
     setError(null);
 
     try {
+      const queryParam = currentUser?.id ? `?host_id=${currentUser.id}` : "";
       const [dash, list] = await Promise.all([
-        fetchApi<HostDashboardData>("/host/dashboard"),
-        fetchApi<Listing[]>("/host/listings"),
+        fetchApi<HostDashboardData>(`/host/dashboard${queryParam}`),
+        fetchApi<Listing[]>(`/host/listings${queryParam}`),
       ]);
 
       setDashboardData(dash);
@@ -60,7 +61,7 @@ export default function HostDashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentUser?.id]);
 
   useEffect(() => {
     loadHostData();
@@ -186,18 +187,21 @@ export default function HostDashboardPage() {
               </div>
 
               <div>
+                <p className="text-xs font-bold text-[#E61E4D] uppercase tracking-wider mb-0.5">
+                  Host Dashboard
+                </p>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold text-neutral-900">
-                    {host.name}
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+                    Welcome back, {host.name.split(" ")[0]} 👋
                   </h1>
                   {host.is_superhost && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-airbnb-rose bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-airbnb-rose bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-100 shadow-xs">
                       Superhost
                     </span>
                   )}
                 </div>
                 <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
-                  Host Workspace · {host.email}
+                  Host Workspace · {host.name} ({host.email})
                 </p>
               </div>
             </div>
