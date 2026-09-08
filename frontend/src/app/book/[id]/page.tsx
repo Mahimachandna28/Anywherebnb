@@ -29,7 +29,7 @@ function CheckoutContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { currentUser } = useUser();
+  const { currentUser, isLoggedIn, openAuthModal, isLoading: isUserLoading } = useUser();
 
   const listingId = Number(params?.id);
 
@@ -119,6 +119,15 @@ function CheckoutContent() {
 
   const handleConfirmAndPay = async () => {
     if (!listing) return;
+
+    if (!isLoggedIn) {
+      openAuthModal({
+        title: "Log in or sign up to book",
+        message: "You need to log in or create an account to complete your reservation.",
+        mode: "login",
+      });
+      return;
+    }
 
     if (nights <= 0) {
       setErrorMessage("Please select valid check-in and checkout dates.");
@@ -222,6 +231,53 @@ function CheckoutContent() {
             Request to book
           </h1>
         </div>
+
+        {/* Unauthenticated Login Notice */}
+        {!isLoggedIn && !isUserLoading && (
+          <div className="mb-8 p-5 rounded-2xl bg-amber-50/90 border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                <Lock className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="font-semibold text-neutral-900 text-sm">
+                  Log in or sign up to complete your reservation
+                </p>
+                <p className="text-xs text-neutral-600 mt-0.5">
+                  Your stay dates and guest count are saved. Please log in or sign up to confirm this booking.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={() =>
+                  openAuthModal({
+                    title: "Log in or sign up to book",
+                    message: "Log in to confirm your booking and view your trip details.",
+                    mode: "login",
+                  })
+                }
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-neutral-900 text-white hover:bg-black transition shadow-xs cursor-pointer"
+              >
+                Log in
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  openAuthModal({
+                    title: "Log in or sign up to book",
+                    message: "Sign up to confirm your booking and view your trip details.",
+                    mode: "signup",
+                  })
+                }
+                className="px-4 py-2 text-xs font-semibold rounded-xl border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-50 transition cursor-pointer"
+              >
+                Sign up
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Error Banner */}
         {errorMessage && (

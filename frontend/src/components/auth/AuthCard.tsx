@@ -11,12 +11,26 @@ interface AuthCardProps {
   onSuccess?: () => void;
   onClose?: () => void;
   isPage?: boolean;
+  title?: string;
+  message?: string;
+  initialMode?: "login" | "signup" | "both";
 }
 
-export function AuthCard({ onSuccess, onClose, isPage = false }: AuthCardProps) {
+export function AuthCard({
+  onSuccess,
+  onClose,
+  isPage = false,
+  title,
+  message,
+  initialMode = "login",
+}: AuthCardProps) {
   const { allUsers, loginUser } = useUser();
   const { success, error, info } = useToast();
 
+  // Mode: "login" | "signup"
+  const [authMode, setAuthMode] = useState<"login" | "signup">(
+    initialMode === "signup" ? "signup" : "login"
+  );
   // Mode: "phone" | "email"
   const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
   // Step: "input" | "otp"
@@ -219,9 +233,49 @@ export function AuthCard({ onSuccess, onClose, isPage = false }: AuthCardProps) 
       {step === "input" ? (
         /* STEP 1: Phone / Email Input Screen */
         <div>
-          <h2 className="text-[26px] font-bold text-neutral-900 text-center tracking-tight mt-3 mb-5">
-            Log in or sign up
+          <h2 className="text-[24px] font-bold text-neutral-900 text-center tracking-tight mt-3 mb-1">
+            {title || (authMode === "login" ? "Log in to Anywherebnb" : "Sign up for Anywherebnb")}
           </h2>
+          <p className="text-xs text-neutral-500 text-center mb-4 leading-relaxed">
+            {message ||
+              (authMode === "login"
+                ? "Welcome back! Enter your details to continue."
+                : "Create an account to reserve properties and access your trips.")}
+          </p>
+
+          {/* Airbnb-style Log in / Sign up Mode Switcher */}
+          <div className="grid grid-cols-2 p-1 bg-neutral-100 rounded-xl mb-4 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setAuthMode("login")}
+              className={`py-2 rounded-lg transition text-center cursor-pointer ${
+                authMode === "login"
+                  ? "bg-white text-neutral-900 shadow-xs"
+                  : "text-neutral-500 hover:text-neutral-900"
+              }`}
+            >
+              Log in
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode("signup")}
+              className={`py-2 rounded-lg transition text-center cursor-pointer ${
+                authMode === "signup"
+                  ? "bg-white text-neutral-900 shadow-xs"
+                  : "text-neutral-500 hover:text-neutral-900"
+              }`}
+            >
+              Sign up
+            </button>
+          </div>
+
+          {/* Context Notice if custom message exists */}
+          {message && (
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2">
+              <span className="text-sm leading-none shrink-0">🏡</span>
+              <span className="font-medium">{message}</span>
+            </div>
+          )}
 
           {/* Separate Method Switcher Tabs: Phone vs Email */}
           <div className="flex bg-neutral-100 p-1 rounded-xl mb-4 text-xs font-semibold">
@@ -307,7 +361,7 @@ export function AuthCard({ onSuccess, onClose, isPage = false }: AuthCardProps) 
             onClick={handleSendOtp}
             className="w-full mt-4 py-3.5 rounded-xl bg-[#E00B41] hover:bg-[#D70466] active:scale-[0.99] text-white font-semibold text-base transition shadow-sm cursor-pointer"
           >
-            Continue with OTP
+            {authMode === "login" ? "Continue to Log In" : "Continue to Sign Up"}
           </button>
 
           {/* "or" Divider */}

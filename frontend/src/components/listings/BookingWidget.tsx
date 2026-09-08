@@ -6,6 +6,7 @@ import { Star, ChevronDown, Minus, Plus } from "lucide-react";
 import { Listing } from "@/types";
 import { formatCurrency, formatRating } from "@/lib/formatters";
 import { differenceInDays, parseISO, format } from "date-fns";
+import { useUser } from "@/context/UserContext";
 
 interface BookingWidgetProps {
   listing: Listing;
@@ -25,6 +26,7 @@ export function BookingWidget({
   onGuestChange,
 }: BookingWidgetProps) {
   const router = useRouter();
+  const { isLoggedIn, openAuthModal } = useUser();
 
   const [isGuestPickerOpen, setIsGuestPickerOpen] = useState(false);
   const [adults, setAdults] = useState(Math.max(1, totalGuests));
@@ -83,6 +85,15 @@ export function BookingWidget({
   const handleReserve = () => {
     if (!checkIn || !checkOut || nights <= 0) {
       if (onFocusCalendar) onFocusCalendar();
+      return;
+    }
+
+    if (!isLoggedIn) {
+      openAuthModal({
+        title: "Log in or sign up to book",
+        message: "You need to log in or create an account to reserve this property.",
+        mode: "login",
+      });
       return;
     }
 

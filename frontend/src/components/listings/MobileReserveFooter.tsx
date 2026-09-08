@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Listing } from "@/types";
 import { formatCurrency } from "@/lib/formatters";
 import { differenceInDays, parseISO, format } from "date-fns";
+import { useUser } from "@/context/UserContext";
 
 interface MobileReserveFooterProps {
   listing: Listing;
@@ -22,6 +23,7 @@ export function MobileReserveFooter({
   onFocusCalendar,
 }: MobileReserveFooterProps) {
   const router = useRouter();
+  const { isLoggedIn, openAuthModal } = useUser();
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
@@ -46,6 +48,15 @@ export function MobileReserveFooter({
   const handleReserve = () => {
     if (!checkIn || !checkOut || nights <= 0) {
       onFocusCalendar();
+      return;
+    }
+
+    if (!isLoggedIn) {
+      openAuthModal({
+        title: "Log in or sign up to book",
+        message: "You need to log in or create an account to reserve this property.",
+        mode: "login",
+      });
       return;
     }
 

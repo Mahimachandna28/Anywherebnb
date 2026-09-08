@@ -1,5 +1,5 @@
 from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import Booking, Listing, User
@@ -14,17 +14,54 @@ from app.services.pricing_service import calculate_stay_price
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
-def get_current_guest(db: Session = Depends(get_db)) -> User:
+def get_current_guest(
+    x_user_id: int | None = Header(None, alias="X-User-Id"),
+    x_user_email: str | None = Header(None, alias="X-User-Email"),
+    authorization: str | None = Header(None),
+    db: Session = Depends(get_db),
+) -> User:
     """
-    Returns the active demo guest user (Aarav Patel).
-    In a real app, this would decode a JWT or session cookie.
+    Enforces authentication on booking endpoints.
+    Requires a valid user session via X-User-Id, X-User-Email, or Authorization header.
+    Rejects unauthenticated requests with HTTP 401 Unauthorized.
     """
-    guest = db.query(User).filter(User.email == "aarav.patel@example.com").first()
-    if not guest:
-        guest = db.query(User).filter(User.role.in_(["guest", "both"])).first()
-    if not guest:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No active guest user found.")
-    return guest
+    if x_user_id is not None:
+        user = db.query(User).filter(User.id == x_user_id).first()
+        if user:
+            return user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user session. Please log in again.",
+        )
+
+    if x_user_email is not None and x_user_email.strip():
+        user = db.query(User).filter(User.email == x_user_email.strip().lower()).first()
+        if user:
+            return user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user session. Please log in again.",
+        )
+
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+        if token.isdigit():
+            user = db.query(User).filter(User.id == int(token)).first()
+            if user:
+                return user
+        elif "@" in token:
+            user = db.query(User).filter(User.email == token.lower()).first()
+            if user:
+                return user
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization token. Please log in again.",
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required. Please log in to complete your reservation.",
+    )
 
 @router.post("/calculate-price", response_model=PriceCalculationResponse)
 def calculate_price(
@@ -98,12 +135,8 @@ def create_booking(
             detail="These dates are no longer available. Another guest has already reserved them.",
         )
 
-    # Resolve target guest (fallback to current demo guest)
+    # Resolve target guest strictly from authenticated user session
     guest_id = current_guest.id
-    if payload.guest_id:
-        custom_guest = db.query(User).filter(User.id == payload.guest_id).first()
-        if custom_guest:
-            guest_id = custom_guest.id
 
     # Calculate itemized fees
     calc = calculate_stay_price(listing, payload.check_in_date, payload.check_out_date)
@@ -122,9 +155,9 @@ def create_booking(
         cleaning_fee=calc.cleaning_fee,
         service_fee=calc.service_fee,
         total_price=calc.total_price,
-        status="confirmed",
-        payment_method=payload.payment_method,
+        payment_method=payload.payment_method or "Credit Card (Mock)",
         payment_status="paid",
+        status="confirmed",
     )
 
     db.add(booking)
@@ -137,17 +170,19 @@ def create_booking(
 def get_my_trips(
     guest_id: int | None = Query(None, description="Optional guest id for account-isolated trips"),
     status_filter: str | None = Query(None, description="Filter by status: confirmed, completed, cancelled"),
+    x_user_id: int | None = Header(None, alias="X-User-Id"),
     db: Session = Depends(get_db),
-    current_guest: User = Depends(get_current_guest),
 ):
     """
     Retrieves all reservations booked by the current user.
     """
-    target_id = current_guest.id
-    if guest_id:
-        custom_guest = db.query(User).filter(User.id == guest_id).first()
-        if custom_guest:
-            target_id = custom_guest.id
+    target_id = guest_id or x_user_id
+    if not target_id:
+        demo = db.query(User).filter(User.email == "aarav.patel@example.com").first()
+        target_id = demo.id if demo else None
+
+    if not target_id:
+        return []
 
     query = db.query(Booking).filter(Booking.guest_id == target_id)
 

@@ -4,6 +4,13 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "@/types";
 import { fetchApi } from "@/lib/api";
 
+export interface AuthModalOptions {
+  title?: string;
+  message?: string;
+  mode?: "login" | "signup" | "both";
+  onSuccess?: () => void;
+}
+
 interface UserContextType {
   currentUser: User | null;
   currentRole: UserRole;
@@ -11,7 +18,10 @@ interface UserContextType {
   isLoading: boolean;
   isLoggedIn: boolean;
   isAuthModalOpen: boolean;
+  authModalOptions: AuthModalOptions | null;
   setIsAuthModalOpen: (open: boolean) => void;
+  openAuthModal: (options?: AuthModalOptions) => void;
+  closeAuthModal: () => void;
   switchUser: (userId: number) => void;
   loginUser: (user: User) => void;
   logoutUser: () => void;
@@ -27,6 +37,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalOptions, setAuthModalOptions] = useState<AuthModalOptions | null>(null);
 
   useEffect(() => {
     async function loadUsers() {
@@ -85,10 +96,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     setCurrentRole(user.role === "host" ? "host" : "guest");
     setIsLoggedIn(true);
     setIsAuthModalOpen(false);
+    if (authModalOptions?.onSuccess) {
+      authModalOptions.onSuccess();
+    }
+    setAuthModalOptions(null);
     if (typeof window !== "undefined") {
       localStorage.setItem("anywherebnb_current_user", JSON.stringify(user));
       localStorage.setItem("anywherebnb_is_logged_in", "true");
     }
+  };
+
+  const openAuthModal = (options?: AuthModalOptions) => {
+    setAuthModalOptions(options || null);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+    setAuthModalOptions(null);
   };
 
   const logoutUser = () => {
@@ -137,7 +162,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isLoggedIn,
         isAuthModalOpen,
+        authModalOptions,
         setIsAuthModalOpen,
+        openAuthModal,
+        closeAuthModal,
         switchUser,
         loginUser,
         logoutUser,

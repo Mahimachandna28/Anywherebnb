@@ -3,6 +3,23 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 client = TestClient(app)
+GUEST_HEADERS = {"X-User-Id": "4"}
+
+def test_create_booking_unauthenticated_rejected():
+    """Verifies that unauthenticated API requests to create bookings are rejected with 401."""
+    list_res = client.get("/api/listings")
+    listing_id = list_res.json()["items"][0]["id"]
+    today = date.today()
+    payload = {
+        "listing_id": listing_id,
+        "check_in_date": (today + timedelta(days=90)).isoformat(),
+        "check_out_date": (today + timedelta(days=95)).isoformat(),
+        "total_guests": 2,
+    }
+    # Calling POST /api/bookings with no auth headers must return 401
+    res = client.post("/api/bookings", json=payload)
+    assert res.status_code == 401
+    assert "authentication" in res.json()["detail"].lower()
 
 def test_calculate_price_available():
     # Fetch a valid listing
@@ -48,7 +65,7 @@ def test_create_booking_success_and_conflict_rejection():
     }
 
     # 1. Create original booking
-    res = client.post("/api/bookings", json=payload)
+    res = client.post("/api/bookings", json=payload, headers=GUEST_HEADERS)
     assert res.status_code == 201
     booking_data = res.json()
     booking_id = booking_data["id"]
@@ -56,7 +73,7 @@ def test_create_booking_success_and_conflict_rejection():
     assert booking_data["total_nights"] == 5
 
     # 2. Attempt duplicate/overlapping booking (same dates) -> MUST fail with 400
-    res_conflict = client.post("/api/bookings", json=payload)
+    res_conflict = client.post("/api/bookings", json=payload, headers=GUEST_HEADERS)
     assert res_conflict.status_code == 400
     assert "no longer available" in res_conflict.json()["detail"].lower()
 
@@ -68,27 +85,27 @@ def test_create_booking_success_and_conflict_rejection():
         "total_guests": 2,
         "adults": 2,
     }
-    res_overlap = client.post("/api/bookings", json=overlap_payload)
+    res_overlap = client.post("/api/bookings", json=overlap_payload, headers=GUEST_HEADERS)
     assert res_overlap.status_code == 400
 
     # 4. Verify booking appears in My Trips
-    trips_res = client.get("/api/bookings/my-trips")
+    trips_res = client.get("/api/bookings/my-trips", headers=GUEST_HEADERS)
     assert trips_res.status_code == 200
     my_booking_ids = [b["id"] for b in trips_res.json()]
     assert booking_id in my_booking_ids
 
     # 5. Cancel the booking
-    cancel_res = client.post(f"/api/bookings/{booking_id}/cancel")
+    cancel_res = client.post(f"/api/bookings/{booking_id}/cancel", headers=GUEST_HEADERS)
     assert cancel_res.status_code == 200
     assert cancel_res.json()["status"] == "cancelled"
 
     # 6. Verify dates are freed up and can be booked again!
-    res_rebook = client.post("/api/bookings", json=payload)
+    res_rebook = client.post("/api/bookings", json=payload, headers=GUEST_HEADERS)
     assert res_rebook.status_code == 201
     new_booking_id = res_rebook.json()["id"]
 
     # Clean up
-    client.post(f"/api/bookings/{new_booking_id}/cancel")
+    client.post(f"/api/bookings/{new_booking_id}/cancel", headers=GUEST_HEADERS)
 
 def test_booking_guest_capacity_exceeded():
     list_res = client.get("/api/listings")
@@ -103,12 +120,12 @@ def test_booking_guest_capacity_exceeded():
         "adults": listing["max_guests"] + 5,
     }
 
-    res = client.post("/api/bookings", json=payload)
+    res = client.post("/api/bookings", json=payload, headers=GUEST_HEADERS)
     assert res.status_code == 400
     assert "maximum" in res.json()["detail"].lower()
 
 def test_cancel_nonexistent_booking():
-    res = client.post("/api/bookings/999999/cancel")
+    res = client.post("/api/bookings/999999/cancel", headers=GUEST_HEADERS)
     assert res.status_code == 404
 
 def test_create_booking_invalid_date_order():
@@ -123,7 +140,7 @@ def test_create_booking_invalid_date_order():
         "total_guests": 2,
     }
 
-    res = client.post("/api/bookings", json=payload)
+    res = client.post("/api/bookings", json=payload, headers=GUEST_HEADERS)
     assert res.status_code == 400
     assert "after" in res.json()["detail"].lower()
 
@@ -188,7 +205,7 @@ def test_evaluator_booking_correctness_overlap_and_turnover():
     assert calc_data["total_price"] == expected_total
 
     # Complete checkout for Test A
-    res_a = client.post("/api/bookings", json=payload_a)
+    res_a = client.post("/api/bookings", json=payload_a, headers=GUEST_HEADERS)
     assert res_a.status_code == 201
     booking_a = res_a.json()
     assert booking_a["total_nights"] == 4
@@ -196,7 +213,7 @@ def test_evaluator_booking_correctness_overlap_and_turnover():
     assert booking_a["status"] == "confirmed"
 
     # Verify booking exists in My Trips
-    trips_res = client.get("/api/bookings/my-trips")
+    trips_res = client.get("/api/bookings/my-trips", headers=GUEST_HEADERS)
     assert trips_res.status_code == 200
     trips_ids = [b["id"] for b in trips_res.json()]
     assert booking_a["id"] in trips_ids
@@ -210,7 +227,7 @@ def test_evaluator_booking_correctness_overlap_and_turnover():
         "adults": 2,
         "children": 0,
     }
-    res_b_overlap = client.post("/api/bookings", json=payload_b_overlap)
+    res_b_overlap = client.post("/api/bookings", json=payload_b_overlap, headers=GUEST_HEADERS)
     assert res_b_overlap.status_code == 400
     assert "no longer available" in res_b_overlap.json()["detail"].lower()
 
@@ -224,13 +241,13 @@ def test_evaluator_booking_correctness_overlap_and_turnover():
         "adults": 2,
         "children": 0,
     }
-    res_b_adjacent = client.post("/api/bookings", json=payload_b_adjacent)
+    res_b_adjacent = client.post("/api/bookings", json=payload_b_adjacent, headers=GUEST_HEADERS)
     assert res_b_adjacent.status_code == 201
     booking_b_adj = res_b_adjacent.json()
     assert booking_b_adj["total_nights"] == 3
     assert booking_b_adj["status"] == "confirmed"
 
     # Clean up test bookings
-    client.post(f"/api/bookings/{booking_a['id']}/cancel")
-    client.post(f"/api/bookings/{booking_b_adj['id']}/cancel")
+    client.post(f"/api/bookings/{booking_a['id']}/cancel", headers=GUEST_HEADERS)
+    client.post(f"/api/bookings/{booking_b_adj['id']}/cancel", headers=GUEST_HEADERS)
 
