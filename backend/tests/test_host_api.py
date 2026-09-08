@@ -228,3 +228,27 @@ def test_host_crud_creates_under_active_host():
     del_res = client.delete(f"/api/listings/{created_id}", headers={"X-User-Id": str(priya_id)})
     assert del_res.status_code == 204
 
+def test_host_bookings_endpoint():
+    """Verify that GET /api/host/bookings returns only bookings for the active host's listings."""
+    res_users = client.get("/api/users")
+    users = {u["name"]: u for u in res_users.json()}
+    rahul_id = users["Rahul Sharma"]["id"]
+    priya_id = users["Priya Sharma"]["id"]
+
+    # Rahul's bookings
+    res_rahul = client.get("/api/host/bookings", headers={"X-User-Id": str(rahul_id)})
+    assert res_rahul.status_code == 200
+    rahul_bookings = res_rahul.json()
+    assert len(rahul_bookings) >= 2
+    for b in rahul_bookings:
+        assert b["listing"]["host_id"] == rahul_id
+
+    # Priya's bookings
+    res_priya = client.get("/api/host/bookings", headers={"X-User-Id": str(priya_id)})
+    assert res_priya.status_code == 200
+    priya_bookings = res_priya.json()
+    assert len(priya_bookings) >= 1
+    for b in priya_bookings:
+        assert b["listing"]["host_id"] == priya_id
+
+

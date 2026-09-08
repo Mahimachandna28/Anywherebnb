@@ -4,6 +4,7 @@ from sqlalchemy import func
 from app.core.database import get_db
 from app.models import Listing, Booking, User
 from app.schemas.listing import ListingResponse
+from app.schemas.booking import BookingResponse
 
 router = APIRouter(prefix="/host", tags=["Host"])
 
@@ -118,3 +119,25 @@ def get_host_listings(
         result.append(item)
 
     return result
+
+@router.get("/bookings", response_model=list[BookingResponse])
+def get_host_bookings(
+    db: Session = Depends(get_db),
+    current_host: User = Depends(get_current_host),
+):
+    """
+    Returns all bookings for listings owned by the active host.
+    """
+    host_listings = db.query(Listing).filter(Listing.host_id == current_host.id).all()
+    host_listing_ids = [l.id for l in host_listings]
+    if not host_listing_ids:
+        return []
+
+    bookings = (
+        db.query(Booking)
+        .filter(Booking.listing_id.in_(host_listing_ids))
+        .order_by(Booking.created_at.desc())
+        .all()
+    )
+    return bookings
+
