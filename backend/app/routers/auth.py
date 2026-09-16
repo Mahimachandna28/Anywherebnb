@@ -40,6 +40,9 @@ async def send_otp(payload: SendOtpRequest, db: Session = Depends(get_db)):
             .filter((User.email == clean_id) | (User.phone == clean_id))
             .first()
         )
+        if not existing_user and payload.type in ("phone", "whatsapp"):
+            num_part = clean_id[-10:]
+            existing_user = db.query(User).filter(User.phone.like(f"%{num_part}%")).first()
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -54,8 +57,8 @@ async def send_otp(payload: SendOtpRequest, db: Session = Depends(get_db)):
             .first()
         )
         if not existing_user:
-            # Also check if it matches demo accounts by numeric part
-            if payload.type == "phone":
+            # Also check if it matches accounts by numeric part
+            if payload.type in ("phone", "whatsapp"):
                 num_part = clean_id[-10:]
                 existing_user = (
                     db.query(User)
@@ -65,7 +68,7 @@ async def send_otp(payload: SendOtpRequest, db: Session = Depends(get_db)):
             if not existing_user:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"No account found registered with this {payload.type}. Please sign up first.",
+                    detail=f"No account found registered with this {payload.type} number. Please sign up first.",
                 )
 
     # 3. Resend rate limiting: prevent spamming (30 seconds cooldown)
