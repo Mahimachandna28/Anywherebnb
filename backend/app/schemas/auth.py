@@ -3,7 +3,7 @@ from app.schemas.user import UserResponse
 
 class SendOtpRequest(BaseModel):
     identifier: str = Field(..., description="Phone number (e.g. +919876543210 or 10-digit) or email address")
-    type: str = Field("phone", description="'phone' or 'email'")
+    type: str = Field("whatsapp", description="'whatsapp', 'phone', or 'email'")
     purpose: str = Field("login", description="'login' or 'signup'")
 
 class SendOtpResponse(BaseModel):
@@ -11,6 +11,9 @@ class SendOtpResponse(BaseModel):
     message: str
     identifier: str
     expires_in_seconds: int = 600
+    whatsapp_url: str | None = None
+    otp_code: str | None = None
+
 
 class VerifyOtpRequest(BaseModel):
     identifier: str = Field(..., description="Phone number or email address that received the OTP")

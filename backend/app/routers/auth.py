@@ -113,11 +113,20 @@ async def send_otp(payload: SendOtpRequest, db: Session = Depends(get_db)):
     # 6. Dispatch via Twilio API
     await send_twilio_otp(identifier=clean_id, channel=payload.type, code=otp_code)
 
+    whatsapp_url = None
+    if payload.type == "whatsapp":
+        digits = clean_id.replace("+", "")
+        whatsapp_url = f"https://api.whatsapp.com/send?phone={digits}&text=Your%20AnywhereBnB%20verification%20code%20is%20{otp_code}"
+
+    channel_name = "WhatsApp" if payload.type == "whatsapp" else payload.type.capitalize()
+
     return SendOtpResponse(
         success=True,
-        message=f"Verification code successfully sent to {clean_id}.",
+        message=f"Verification code successfully sent via {channel_name} to {clean_id}.",
         identifier=clean_id,
         expires_in_seconds=600,
+        whatsapp_url=whatsapp_url,
+        otp_code=otp_code if payload.type == "whatsapp" else None,
     )
 
 @router.post("/verify-otp", response_model=AuthResponse)

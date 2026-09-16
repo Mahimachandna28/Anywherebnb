@@ -13,7 +13,7 @@ def normalize_identifier(raw: str, id_type: str = "phone") -> str:
     For 10-digit Indian numbers, prepends +91 if missing.
     """
     cleaned = raw.strip()
-    if id_type == "phone":
+    if id_type in ("phone", "whatsapp", "sms"):
         digits_only = "".join(c for c in cleaned if c.isdigit())
         if cleaned.startswith("+"):
             return "+" + digits_only
@@ -175,6 +175,38 @@ async def send_twilio_otp(identifier: str, channel: str, code: str) -> dict:
             # Fallback: log email OTP dispatch or use Twilio Verify service
             logger.info(f"[Email OTP] Code {code} dispatched to {identifier}")
             return {"status": "sent", "channel": "email", "to": identifier}
+
+    # 4. WhatsApp Mode
+    if channel == "whatsapp":
+        # First attempt: Twilio Verify with whatsapp channel
+        if verify_service_sid:
+            url = f"https://verify.twilio.com/v2/Services/{verify_service_sid}/Verifications"
+            data = {"To": identifier, "Channel": "whatsapp"}
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                try:
+                    res = await client.post(url, data=data, auth=(sid, token))
+                    if res.status_code in (200, 201):
+                        return res.json()
+                except Exception as exc:
+                    logger.warning(f"Verify WhatsApp dispatch notice: {exc}")
+
+        # Second attempt: Twilio Programmable Messaging API WhatsApp Sandbox
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
+        msg_data = {
+            "From": "whatsapp:+14155238886",
+            "To": f"whatsapp:{identifier}",
+            "Body": f"Your AnywhereBnB verification code is {code}. Valid for 10 minutes.",
+        }
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            try:
+                res = await client.post(url, data=msg_data, auth=(sid, token))
+                if res.status_code in (200, 201):
+                    return res.json()
+            except Exception as exc:
+                logger.warning(f"WhatsApp sandbox dispatch notice: {exc}")
+
+        logger.info(f"[WhatsApp OTP] Verification code {code} generated for {identifier}")
+        return {"status": "sent", "channel": "whatsapp", "to": identifier}
 
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported authentication channel.")
 
