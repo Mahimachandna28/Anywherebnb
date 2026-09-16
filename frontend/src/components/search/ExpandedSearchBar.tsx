@@ -453,9 +453,11 @@ export function ExpandedSearchBar() {
                   type="button"
                   onClick={() => {
                     const today = new Date();
-                    const weekend = addDays(today, 4);
-                    const monday = addDays(weekend, 3);
-                    setCheckInDate(format(weekend, "yyyy-MM-dd"));
+                    const dayOfWeek = today.getDay(); // 0 = Sunday, 6 = Saturday
+                    const daysUntilSaturday = (6 - dayOfWeek + 7) % 7; // next Saturday (or today if already Saturday)
+                    const saturday = addDays(today, daysUntilSaturday);
+                    const monday = addDays(saturday, 2); // 2-night weekend stay (Saturday to Monday)
+                    setCheckInDate(format(saturday, "yyyy-MM-dd"));
                     setCheckOutDate(format(monday, "yyyy-MM-dd"));
                     setActiveSearchTab("who");
                   }}
