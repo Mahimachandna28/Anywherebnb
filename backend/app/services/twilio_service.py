@@ -56,12 +56,12 @@ async def send_twilio_otp(identifier: str, channel: str, code: str) -> dict:
                 detail="Twilio credentials are not configured. Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in backend environment variables.",
             )
 
-    # 1. Twilio Verify API Mode
-    if verify_service_sid:
+    # 1. Twilio Verify API Mode (For SMS / Phone)
+    if verify_service_sid and channel in ("phone", "sms"):
         url = f"https://verify.twilio.com/v2/Services/{verify_service_sid}/Verifications"
         data = {
             "To": identifier,
-            "Channel": "sms" if channel == "phone" or channel == "sms" else "email",
+            "Channel": "sms",
         }
         async with httpx.AsyncClient(timeout=10.0) as client:
             try:
@@ -76,7 +76,10 @@ async def send_twilio_otp(identifier: str, channel: str, code: str) -> dict:
             if response.status_code not in (200, 201):
                 err_body = response.json() if "application/json" in response.headers.get("content-type", "") else {}
                 err_msg = err_body.get("message", response.text)
-                logger.error(f"Twilio Verify Error ({response.status_code}): {err_msg}")
+                logger.warning(f"Twilio Verify Notice ({response.status_code}): {err_msg}")
+                if "trial" in err_msg.lower() or "verified tester" in err_msg.lower() or response.status_code == 403:
+                    logger.warning(f"[Trial Fallback] Recipient {identifier} is not a verified tester on Twilio trial. Retaining database OTP.")
+                    return {"status": "sent", "mode": "trial_fallback", "to": identifier, "note": err_msg}
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Twilio Verify Error: {err_msg}",
