@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { X, ArrowLeft, Smartphone, Mail } from "lucide-react";
+import { X, ArrowLeft, Smartphone, Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useToast } from "@/context/ToastContext";
+import { fetchApi } from "@/lib/api";
 import { User } from "@/types";
 
 interface AuthCardProps {
@@ -31,20 +32,25 @@ export function AuthCard({
   const [authMode, setAuthMode] = useState<"login" | "signup">(
     initialMode === "signup" ? "signup" : "login"
   );
-  // Mode: "phone" | "email"
+  // Method: "phone" | "email"
   const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
   // Step: "input" | "otp"
   const [step, setStep] = useState<"input" | "otp">("input");
 
-  // Inputs
+  // Form Inputs
   const [phoneNumber, setPhoneNumber] = useState("");
   const [emailAddress, setEmailAddress] = useState("");
   const [fullName, setFullName] = useState("");
+  const [password, setPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("123456");
+
+  // Loading & State Handlers
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [resendTimer, setResendTimer] = useState(30);
 
-  // Timer countdown
+  // Timer countdown for resend
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (step === "otp" && resendTimer > 0) {
@@ -56,128 +62,134 @@ export function AuthCard({
   const handleClose = () => {
     setStep("input");
     setOtpCode("");
+    setFormError(null);
     onClose?.();
   };
 
-  const handleSendOtp = () => {
+  const getCleanIdentifier = () => {
     if (authMethod === "phone") {
-      const cleanPhone = phoneNumber.replace(/\D/g, "");
-      if (cleanPhone.length < 10) {
-        error("Please enter a valid 10-digit mobile number.");
+      const digits = phoneNumber.replace(/\D/g, "");
+      return digits.length >= 10 ? `+91${digits.slice(-10)}` : digits;
+    }
+    return emailAddress.trim().toLowerCase();
+  };
+
+  const handleSendOtp = async () => {
+    setFormError(null);
+
+    // Validate inputs
+    if (authMethod === "phone") {
+      const cleanDigits = phoneNumber.replace(/\D/g, "");
+      if (cleanDigits.length < 10) {
+        const msg = "Please enter a valid 10-digit mobile number.";
+        setFormError(msg);
+        error(msg);
         return;
       }
-      // Generate a realistic 6-digit OTP
-      const newOtp = String(Math.floor(100000 + Math.random() * 900000));
-      setGeneratedOtp(newOtp);
-      setStep("otp");
-      setResendTimer(30);
-      setOtpCode("");
-      info(`OTP sent to +91 ${cleanPhone.slice(-10)}`);
     } else {
       const cleanEmail = emailAddress.trim().toLowerCase();
       if (!cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
-        error("Please enter a valid email address.");
+        const msg = "Please enter a valid email address.";
+        setFormError(msg);
+        error(msg);
         return;
       }
-      const newOtp = String(Math.floor(100000 + Math.random() * 900000));
-      setGeneratedOtp(newOtp);
+    }
+
+    if (authMode === "signup") {
+      if (!fullName.trim()) {
+        const msg = "Please enter your full name to create an account.";
+        setFormError(msg);
+        error(msg);
+        return;
+      }
+      if (!password || password.length < 6) {
+        const msg = "Please enter a password with at least 6 characters.";
+        setFormError(msg);
+        error(msg);
+        return;
+      }
+    }
+
+    const identifier = getCleanIdentifier();
+
+    try {
+      setIsSendingOtp(true);
+      const res = await fetchApi<{
+        success: boolean;
+        message: string;
+        identifier: string;
+      }>("/auth/send-otp", {
+        method: "POST",
+        body: JSON.stringify({
+          identifier,
+          type: authMethod,
+          purpose: authMode,
+        }),
+      });
+
       setStep("otp");
       setResendTimer(30);
       setOtpCode("");
-      info(`Verification code sent to ${cleanEmail}`);
+      info(res.message || `Verification code sent via Twilio to ${identifier}`);
+    } catch (err: any) {
+      console.error("Failed to send OTP:", err);
+      const errMsg = err.message || "Failed to send verification code. Please try again.";
+      setFormError(errMsg);
+      error(errMsg);
+    } finally {
+      setIsSendingOtp(false);
     }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
+    setFormError(null);
     const entered = otpCode.trim();
-    if (entered !== generatedOtp && entered !== "123456") {
-      error("Invalid code. Please enter the 6-digit code shown above.");
+
+    if (entered.length < 4) {
+      const msg = "Please enter the 6-digit verification code.";
+      setFormError(msg);
+      error(msg);
       return;
     }
 
-    if (authMethod === "phone") {
-      const cleanPhone = phoneNumber.replace(/\D/g, "").slice(-10);
-      const phoneFull = `+91 ${cleanPhone}`;
+    const identifier = getCleanIdentifier();
 
-      // Check if phone matches any seeded account or previous custom
-      const matched = allUsers.find(
-        (u) =>
-          u.phone?.replace(/\D/g, "").includes(cleanPhone) ||
-          u.email.toLowerCase().includes(cleanPhone)
-      );
+    try {
+      setIsVerifyingOtp(true);
+      const res = await fetchApi<{
+        success: boolean;
+        message: string;
+        user: User;
+      }>("/auth/verify-otp", {
+        method: "POST",
+        body: JSON.stringify({
+          identifier,
+          code: entered,
+          purpose: authMode,
+          name: authMode === "signup" ? fullName.trim() : undefined,
+          password: authMode === "signup" ? password : undefined,
+        }),
+      });
 
-      if (matched) {
-        loginUser(matched);
-        success(`Welcome back, ${matched.name}! Wishlist loaded.`);
-      } else {
-        const newUser: User = {
-          id: Date.now(),
-          name: fullName.trim() || `User ${cleanPhone.slice(-4)}`,
-          email: `${cleanPhone}@phone.anywherebnb.in`,
-          phone: phoneFull,
-          avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
-          is_superhost: false,
-          role: "guest",
-          joined_date: new Date().toISOString(),
-        };
-        loginUser(newUser);
-        success(`Account created with ${phoneFull}! Your private wishlist is ready.`);
+      if (res.user) {
+        loginUser(res.user);
+        success(res.message || `Welcome to AnywhereBnB, ${res.user.name}!`);
+        onSuccess?.();
       }
-    } else {
-      const cleanEmail = emailAddress.trim().toLowerCase();
-
-      // Check if email matches seeded demo users
-      const matched = allUsers.find(
-        (u) => u.email.toLowerCase() === cleanEmail
-      );
-
-      if (matched) {
-        loginUser(matched);
-        success(`Welcome back, ${matched.name} (${matched.role === "both" ? "Superhost" : matched.role})! Wishlist loaded.`);
-      } else {
-        const namePart = fullName.trim() || cleanEmail.split("@")[0].replace(/[._]/g, " ");
-        const newUser: User = {
-          id: Date.now(),
-          name: namePart.charAt(0).toUpperCase() + namePart.slice(1),
-          email: cleanEmail,
-          avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
-          is_superhost: false,
-          role: "guest",
-          joined_date: new Date().toISOString(),
-        };
-        loginUser(newUser);
-        success(`Welcome to Anywherebnb, ${newUser.name}! Your private wishlist is ready.`);
-      }
-    }
-
-    onSuccess?.();
-  };
-
-  const handleAutoFillOtp = () => {
-    setOtpCode(generatedOtp);
-  };
-
-  const handleGoogleSignIn = () => {
-    const guestUser = allUsers.find((u) => u.role === "guest") || allUsers[0];
-    if (guestUser) {
-      loginUser(guestUser);
-      success(`Signed in with Google as ${guestUser.name}`);
-      onSuccess?.();
-    }
-  };
-
-  const handleAppleSignIn = () => {
-    const hostUser = allUsers.find((u) => u.role === "host" || u.role === "both") || allUsers[1] || allUsers[0];
-    if (hostUser) {
-      loginUser(hostUser);
-      success(`Signed in with Apple as ${hostUser.name} (Host)`);
-      onSuccess?.();
+    } catch (err: any) {
+      console.error("Failed to verify OTP:", err);
+      const errMsg = err.message || "Invalid or expired verification code.";
+      setFormError(errMsg);
+      error(errMsg);
+    } finally {
+      setIsVerifyingOtp(false);
     }
   };
 
   const handleSelectDemoUser = (user: User) => {
     loginUser(user);
-    success(`Switched to ${user.name}'s account (${user.role === "both" ? "Superhost" : user.role}). Wishlist synced.`);
+    success(`Switched to ${user.name}'s account (${user.role === "both" ? "Superhost" : user.role}).`);
     onSuccess?.();
   };
 
@@ -191,7 +203,10 @@ export function AuthCard({
       {step === "otp" && (
         <button
           type="button"
-          onClick={() => setStep("input")}
+          onClick={() => {
+            setStep("input");
+            setFormError(null);
+          }}
           aria-label="Back"
           className="absolute top-6 left-6 w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-800 transition cursor-pointer"
         >
@@ -231,7 +246,7 @@ export function AuthCard({
       </div>
 
       {step === "input" ? (
-        /* STEP 1: Phone / Email Input Screen */
+        /* STEP 1: Phone / Email & Credentials Input Screen */
         <div>
           <h2 className="text-[24px] font-bold text-neutral-900 text-center tracking-tight mt-3 mb-1">
             {title || (authMode === "login" ? "Log in to Anywherebnb" : "Sign up for Anywherebnb")}
@@ -239,15 +254,18 @@ export function AuthCard({
           <p className="text-xs text-neutral-500 text-center mb-4 leading-relaxed">
             {message ||
               (authMode === "login"
-                ? "Welcome back! Enter your details to continue."
-                : "Create an account to reserve properties and access your trips.")}
+                ? "Welcome back! Enter your details for OTP verification."
+                : "Create your account with real OTP verification via Twilio.")}
           </p>
 
-          {/* Airbnb-style Log in / Sign up Mode Switcher */}
+          {/* Log in / Sign up Mode Switcher */}
           <div className="grid grid-cols-2 p-1 bg-neutral-100 rounded-xl mb-4 text-xs font-semibold">
             <button
               type="button"
-              onClick={() => setAuthMode("login")}
+              onClick={() => {
+                setAuthMode("login");
+                setFormError(null);
+              }}
               className={`py-2 rounded-lg transition text-center cursor-pointer ${
                 authMode === "login"
                   ? "bg-white text-neutral-900 shadow-xs"
@@ -258,7 +276,10 @@ export function AuthCard({
             </button>
             <button
               type="button"
-              onClick={() => setAuthMode("signup")}
+              onClick={() => {
+                setAuthMode("signup");
+                setFormError(null);
+              }}
               className={`py-2 rounded-lg transition text-center cursor-pointer ${
                 authMode === "signup"
                   ? "bg-white text-neutral-900 shadow-xs"
@@ -269,19 +290,22 @@ export function AuthCard({
             </button>
           </div>
 
-          {/* Context Notice if custom message exists */}
-          {message && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2">
-              <span className="text-sm leading-none shrink-0">🏡</span>
-              <span className="font-medium">{message}</span>
+          {/* Form Error Banner */}
+          {formError && (
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-medium flex items-center gap-2 animate-in fade-in">
+              <span className="text-sm shrink-0">⚠️</span>
+              <span>{formError}</span>
             </div>
           )}
 
-          {/* Separate Method Switcher Tabs: Phone vs Email */}
+          {/* Phone vs Email Switcher Tabs */}
           <div className="flex bg-neutral-100 p-1 rounded-xl mb-4 text-xs font-semibold">
             <button
               type="button"
-              onClick={() => setAuthMethod("phone")}
+              onClick={() => {
+                setAuthMethod("phone");
+                setFormError(null);
+              }}
               className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
                 authMethod === "phone"
                   ? "bg-white text-neutral-900 shadow-xs"
@@ -289,11 +313,14 @@ export function AuthCard({
               }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
-              <span>Phone Number</span>
+              <span>Phone (SMS OTP)</span>
             </button>
             <button
               type="button"
-              onClick={() => setAuthMethod("email")}
+              onClick={() => {
+                setAuthMethod("email");
+                setFormError(null);
+              }}
               className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
                 authMethod === "email"
                   ? "bg-white text-neutral-900 shadow-xs"
@@ -301,124 +328,105 @@ export function AuthCard({
               }`}
             >
               <Mail className="w-3.5 h-3.5" />
-              <span>Email ID</span>
+              <span>Email (OTP)</span>
             </button>
           </div>
 
-          {/* Input Box based on chosen method */}
-          {authMethod === "phone" ? (
-            /* Phone Number Box with India Country Code */
-            <div className="space-y-3">
-              <div className="flex items-center rounded-xl border border-neutral-400 focus-within:border-neutral-900 focus-within:ring-2 focus-within:ring-neutral-900 transition overflow-hidden">
-                <div className="bg-neutral-50 px-3.5 py-3.5 border-r border-neutral-300 flex items-center gap-1.5 text-sm font-semibold text-neutral-800 shrink-0 select-none">
+          {/* Input Fields */}
+          <div className="space-y-3">
+            {/* Full Name for Signup */}
+            {authMode === "signup" && (
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 font-medium transition"
+                  required
+                />
+                <UserIcon className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              </div>
+            )}
+
+            {/* Phone or Email Input */}
+            {authMethod === "phone" ? (
+              <div className="flex items-center rounded-xl border border-neutral-300 focus-within:border-neutral-900 focus-within:ring-2 focus-within:ring-neutral-900 transition overflow-hidden">
+                <div className="bg-neutral-50 px-3.5 py-3 border-r border-neutral-300 flex items-center gap-1.5 text-sm font-semibold text-neutral-800 shrink-0 select-none">
                   <span className="text-base leading-none">🇮🇳</span>
                   <span>+91</span>
                 </div>
                 <input
                   type="tel"
-                  placeholder="10-digit mobile number"
+                  placeholder="10-digit phone number"
                   maxLength={10}
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
                   onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                  className="w-full px-3.5 py-3.5 text-base text-neutral-900 placeholder:text-neutral-500 focus:outline-none bg-white font-medium"
+                  className="w-full px-3.5 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-white font-medium"
                 />
               </div>
-              <input
-                type="text"
-                placeholder="Your full name (optional)"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900"
-              />
-            </div>
-          ) : (
-            /* Email ID Box */
-            <div className="space-y-3">
+            ) : (
               <div className="relative">
                 <input
                   type="email"
-                  placeholder="Enter email address"
+                  placeholder="name@example.com"
                   value={emailAddress}
                   onChange={(e) => setEmailAddress(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                  className="w-full px-4 py-3.5 rounded-xl border border-neutral-400 text-base text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 font-medium transition"
                 />
+                <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               </div>
-              <input
-                type="text"
-                placeholder="Your full name (optional)"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-neutral-300 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900"
-              />
-            </div>
-          )}
+            )}
 
-          {/* Continue / Send OTP Button */}
+            {/* Password for Signup */}
+            {authMode === "signup" && (
+              <div className="relative">
+                <input
+                  type="password"
+                  placeholder="Create a password (min. 6 characters)"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 font-medium transition"
+                  required
+                />
+                <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              </div>
+            )}
+          </div>
+
+          {/* Send OTP Button */}
           <button
             type="button"
+            disabled={isSendingOtp}
             onClick={handleSendOtp}
-            className="w-full mt-4 py-3.5 rounded-xl bg-[#E00B41] hover:bg-[#D70466] active:scale-[0.99] text-white font-semibold text-base transition shadow-sm cursor-pointer"
+            className="w-full mt-4 py-3.5 rounded-xl bg-[#E00B41] hover:bg-[#D70466] disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white font-semibold text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
           >
-            {authMode === "login" ? "Continue to Log In" : "Continue to Sign Up"}
+            {isSendingOtp ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Sending Twilio OTP...</span>
+              </>
+            ) : (
+              <span>{authMode === "login" ? "Send Login OTP" : "Send Verification OTP"}</span>
+            )}
           </button>
 
           {/* "or" Divider */}
-          <div className="relative flex items-center justify-center my-5">
+          <div className="relative flex items-center justify-center my-4">
             <div className="border-t border-neutral-200 w-full" />
-            <span className="bg-white px-4 text-xs text-neutral-500 font-normal absolute">
-              or
+            <span className="bg-white px-3 text-xs text-neutral-400 font-normal absolute">
+              or quick demo
             </span>
           </div>
 
-          {/* Social Authentication Buttons */}
-          <div className="flex items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              aria-label="Continue with Google"
-              className="w-16 h-13 rounded-2xl border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 hover:border-neutral-400 active:scale-95 transition shadow-xs cursor-pointer"
-              title="Continue with Google"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleAppleSignIn}
-              aria-label="Continue with Apple"
-              className="w-16 h-13 rounded-2xl border border-neutral-300 flex items-center justify-center hover:bg-neutral-50 hover:border-neutral-400 active:scale-95 transition shadow-xs cursor-pointer"
-              title="Continue with Apple"
-            >
-              <svg className="w-5 h-5 fill-current text-black" viewBox="0 0 170 170">
-                <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.69-7.75-11.96-14.13-7.51-11.19-13.3-24.16-17.38-38.92-4.08-14.77-6.13-28.53-6.13-41.29 0-16.71 4.2-30.73 12.59-42.06 8.39-11.33 18.99-17.15 31.8-17.47 5.75 0 12.06 1.54 18.91 4.62 6.86 3.09 11.2 4.68 13.04 4.79 1.34 0 5.86-1.63 13.56-4.89 7.7-3.26 14.1-4.73 19.2-4.43 14.34.87 25.86 5.89 34.56 15.06-12.72 7.72-18.92 18.23-18.6 31.52.27 10.33 4.28 19.14 12.04 26.43 7.76 7.28 17.07 11.45 27.93 12.5-2.23 7.07-5.1 14.57-8.61 22.49zM119.22 31.85c0-7.28 2.66-14.42 7.99-21.41 5.33-6.99 12.04-11.53 20.14-13.62.45 1.79.67 3.48.67 5.08 0 7.39-2.73 14.62-8.19 21.68-5.46 7.07-12.18 11.53-20.15 13.38-.11-1.68-.46-3.38-.46-5.11z" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Quick Demo Accounts Switcher */}
-          <div className="mt-5 pt-4 border-t border-neutral-100 text-center">
-            <p className="text-[11px] text-neutral-400 mb-2">Instant Demo Accounts (with separate wishlists):</p>
+          {/* Demo Persona Shortcuts */}
+          <div className="text-center">
+            <p className="text-[11px] text-neutral-400 mb-2">Switch to Demo Personas:</p>
             <div className="flex flex-wrap justify-center gap-1.5">
-              {allUsers.map((u) => (
+              {allUsers.slice(0, 4).map((u) => (
                 <button
                   key={u.id}
                   type="button"
@@ -432,72 +440,72 @@ export function AuthCard({
           </div>
         </div>
       ) : (
-        /* STEP 2: OTP Verification Screen */
+        /* STEP 2: Real Twilio OTP Verification Screen */
         <div>
           <h2 className="text-[24px] font-bold text-neutral-900 text-center tracking-tight mt-3 mb-1">
             Confirm your {authMethod === "phone" ? "phone number" : "email"}
           </h2>
-          <p className="text-xs text-neutral-500 text-center mb-5">
-            Enter the 6-digit code sent to{" "}
+          <p className="text-xs text-neutral-500 text-center mb-5 leading-relaxed">
+            Enter the 6-digit verification code sent via Twilio to{" "}
             <span className="font-semibold text-neutral-800">
-              {authMethod === "phone" ? `+91 ${phoneNumber.slice(-10)}` : emailAddress}
+              {getCleanIdentifier()}
             </span>
           </p>
 
-          {/* Simulated OTP Display Banner */}
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold text-amber-900">
-                Demo Verification Code:
-              </p>
-              <p className="text-lg font-mono font-extrabold tracking-widest text-amber-950">
-                {generatedOtp}
-              </p>
+          {/* Form Error Banner in OTP Step */}
+          {formError && (
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-medium flex items-center gap-2 animate-in fade-in">
+              <span className="text-sm shrink-0">⚠️</span>
+              <span>{formError}</span>
             </div>
-            <button
-              type="button"
-              onClick={handleAutoFillOtp}
-              className="text-xs font-bold px-3 py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded-lg transition shrink-0 cursor-pointer"
-            >
-              Auto-fill
-            </button>
-          </div>
+          )}
 
-          {/* 6-digit OTP input */}
+          {/* 6-digit OTP Input */}
           <div className="relative mb-4">
             <input
               type="text"
+              autoFocus
               placeholder="• • • • • •"
+              inputMode="numeric"
               maxLength={6}
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
               onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
-              className="w-full text-center tracking-[0.6em] text-2xl font-mono font-bold px-4 py-3.5 rounded-xl border border-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+              className="w-full text-center tracking-[0.5em] text-2xl font-mono font-bold px-4 py-3 rounded-xl border border-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
             />
           </div>
 
-          {/* Verify & Continue Button */}
+          {/* Verify Button */}
           <button
             type="button"
+            disabled={isVerifyingOtp || otpCode.trim().length < 4}
             onClick={handleVerifyOtp}
-            className="w-full py-3.5 rounded-xl bg-[#E00B41] hover:bg-[#D70466] active:scale-[0.99] text-white font-semibold text-base transition shadow-sm cursor-pointer"
+            className="w-full py-3.5 rounded-xl bg-[#E00B41] hover:bg-[#D70466] disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white font-semibold text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
           >
-            Verify &amp; Continue
+            {isVerifyingOtp ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Verifying code...</span>
+              </>
+            ) : (
+              <span>{authMode === "signup" ? "Verify & Create Account" : "Verify & Log In"}</span>
+            )}
           </button>
 
           {/* Resend OTP */}
           <div className="mt-4 text-center">
             {resendTimer > 0 ? (
               <p className="text-xs text-neutral-400">
-                Resend code in <span className="font-semibold text-neutral-600">{resendTimer}s</span>
+                Resend code in <span className="font-semibold text-neutral-700">{resendTimer}s</span>
               </p>
             ) : (
               <button
                 type="button"
+                disabled={isSendingOtp}
                 onClick={handleSendOtp}
-                className="text-xs font-semibold text-neutral-800 hover:underline cursor-pointer"
+                className="text-xs font-semibold text-neutral-900 hover:underline cursor-pointer"
               >
-                Resend code
+                {isSendingOtp ? "Sending code..." : "Resend code via Twilio"}
               </button>
             )}
           </div>

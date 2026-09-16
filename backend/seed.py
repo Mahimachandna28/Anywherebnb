@@ -32,6 +32,7 @@ def seed_database():
         rahul = User(
             name="Rahul Sharma",
             email="rahul.sharma@example.com",
+            phone="+919876543210",
             avatar_url="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80",
             is_superhost=True,
             role="both",
@@ -40,6 +41,7 @@ def seed_database():
         priya = User(
             name="Priya Sharma",
             email="priya.sharma@example.com",
+            phone="+919876543211",
             avatar_url="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
             is_superhost=True,
             role="both",
@@ -48,6 +50,7 @@ def seed_database():
         arjun = User(
             name="Arjun Nair",
             email="arjun.nair@example.com",
+            phone="+919876543212",
             avatar_url="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
             is_superhost=True,
             role="both",
@@ -56,6 +59,7 @@ def seed_database():
         aman = User(
             name="Aman Verma",
             email="aman.verma@example.com",
+            phone="+919876543213",
             avatar_url="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=400&q=80",
             is_superhost=False,
             role="guest",
@@ -64,6 +68,7 @@ def seed_database():
         aarav = User(
             name="Aarav Patel",
             email="aarav.patel@example.com",
+            phone="+919876543214",
             avatar_url="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
             is_superhost=False,
             role="guest",
@@ -72,6 +77,7 @@ def seed_database():
         ananya = User(
             name="Ananya Iyer",
             email="ananya.iyer@example.com",
+            phone="+919876543215",
             avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
             is_superhost=False,
             role="guest",

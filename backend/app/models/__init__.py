@@ -5,6 +5,7 @@ from app.models.listing import Listing
 from app.models.booking import Booking
 from app.models.review import Review
 from app.models.wishlist import Wishlist
+from app.models.otp import OTPVerification
 
 __all__ = [
     "User",
@@ -15,4 +16,5 @@ __all__ = [
     "Booking",
     "Review",
     "Wishlist",
+    "OTPVerification",
 ]

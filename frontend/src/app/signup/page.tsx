@@ -12,6 +12,7 @@ export default function AuthPage() {
       <AuthCard
         onClose={() => router.push("/")}
         onSuccess={() => router.push("/")}
+        initialMode="signup"
         isPage
       />
     </div>

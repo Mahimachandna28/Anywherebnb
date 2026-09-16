@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 class UserBase(BaseModel):
     name: str
     email: EmailStr
+    phone: str | None = None
     avatar_url: str | None = None
     is_superhost: bool = False
     role: str = "guest"

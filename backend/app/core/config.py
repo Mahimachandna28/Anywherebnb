@@ -16,6 +16,19 @@ class Settings(BaseSettings):
         "https://anywherebnb.vercel.app",
     ]
 
-    model_config = SettingsConfigDict(case_sensitive=True)
+    # Twilio API Configuration
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""
+    TWILIO_VERIFY_SERVICE_SID: str = ""
+    TWILIO_EMAIL_FROM: str = "noreply@anywherebnb.com"
+    SENDGRID_API_KEY: str = ""
+    TWILIO_MOCK_MODE: bool = False
+
+    model_config = SettingsConfigDict(
+        case_sensitive=True,
+        env_file=str(BACKEND_DIR / ".env"),
+        extra="ignore",
+    )
 
 settings = Settings()

@@ -7,6 +7,7 @@ from app.routers import (
     host_router,
     wishlists_router,
     users_router,
+    auth_router,
 )
 
 app = FastAPI(
@@ -41,6 +42,7 @@ app.include_router(bookings_router, prefix=settings.API_V1_STR)
 app.include_router(host_router, prefix=settings.API_V1_STR)
 app.include_router(wishlists_router, prefix=settings.API_V1_STR)
 app.include_router(users_router, prefix=settings.API_V1_STR)
+app.include_router(auth_router, prefix=settings.API_V1_STR)
 
 @app.get("/api/health", tags=["Health"])
 def health_check():
