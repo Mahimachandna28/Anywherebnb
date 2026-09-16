@@ -36,6 +36,17 @@ def root():
         "health": "/api/health",
     }
 
+@app.get("/api", tags=["Health"])
+def api_root():
+    """API root endpoint for easy discovery."""
+    return {
+        "message": "Anywherebnb API is live.",
+        "docs": "/api/docs",
+        "health": "/api/health",
+        "listings": "/api/listings",
+        "users": "/api/users",
+    }
+
 # Include API Routers with /api prefix
 app.include_router(listings_router, prefix=settings.API_V1_STR)
 app.include_router(bookings_router, prefix=settings.API_V1_STR)
