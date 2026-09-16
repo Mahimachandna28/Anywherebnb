@@ -25,6 +25,7 @@ ENV/
 
 # SQLite Database
 *.db
+!backend/airbnb.db
 *.sqlite3
 
 # Environment Variables
