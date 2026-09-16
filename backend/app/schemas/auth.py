@@ -19,7 +19,17 @@ class VerifyOtpRequest(BaseModel):
     name: str | None = Field(None, description="Full name (required for signup)")
     password: str | None = Field(None, description="Password (optional for signup)")
 
+class PasswordLoginRequest(BaseModel):
+    identifier: str = Field(..., description="Phone number or email address")
+    password: str = Field(..., min_length=1, description="Account password")
+
+class DirectSignupRequest(BaseModel):
+    name: str = Field(..., min_length=1, description="Full name")
+    identifier: str = Field(..., description="Phone number or email address")
+    password: str = Field(..., min_length=6, description="Account password (min. 6 characters)")
+
 class AuthResponse(BaseModel):
     success: bool
     message: str
     user: UserResponse
+

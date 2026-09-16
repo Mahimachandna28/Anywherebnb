@@ -172,3 +172,76 @@ def test_phone_number_normalization_and_login(db):
     # Cleanup
     db.delete(otp_rec)
     db.commit()
+
+def test_password_login_and_direct_signup(db):
+    test_email = f"direct_user_{datetime.now().timestamp()}@example.com"
+    test_pass = "DirectPassword123!"
+
+    # 1. Direct Signup without OTP
+    signup_res = client.post(
+        "/api/auth/signup",
+        json={
+            "name": "Direct Test User",
+            "identifier": test_email,
+            "password": test_pass,
+        },
+    )
+    assert signup_res.status_code == 200
+    s_data = signup_res.json()
+    assert s_data["success"] is True
+    assert s_data["user"]["name"] == "Direct Test User"
+    assert s_data["user"]["email"] == test_email.lower()
+
+    # 2. Duplicate Signup prevention
+    dup_res = client.post(
+        "/api/auth/signup",
+        json={
+            "name": "Direct Test User",
+            "identifier": test_email,
+            "password": test_pass,
+        },
+    )
+    assert dup_res.status_code == 400
+    assert "already exists" in dup_res.json()["detail"]
+
+    # 3. Password Login with incorrect password
+    bad_login = client.post(
+        "/api/auth/login",
+        json={
+            "identifier": test_email,
+            "password": "WrongPassword!",
+        },
+    )
+    assert bad_login.status_code == 401
+    assert "Incorrect password" in bad_login.json()["detail"]
+
+    # 4. Successful Password Login
+    good_login = client.post(
+        "/api/auth/login",
+        json={
+            "identifier": test_email,
+            "password": test_pass,
+        },
+    )
+    assert good_login.status_code == 200
+    l_data = good_login.json()
+    assert l_data["success"] is True
+    assert l_data["user"]["email"] == test_email.lower()
+
+    # 5. Password Login with phone number for seeded user (Rahul Sharma)
+    rahul_login = client.post(
+        "/api/auth/login",
+        json={
+            "identifier": "9876543210",
+            "password": "AnyPassword123!",
+        },
+    )
+    assert rahul_login.status_code == 200
+    assert rahul_login.json()["user"]["name"] == "Rahul Sharma"
+
+    # Cleanup
+    user_to_delete = db.query(User).filter(User.email == test_email.lower()).first()
+    if user_to_delete:
+        db.delete(user_to_delete)
+        db.commit()
+

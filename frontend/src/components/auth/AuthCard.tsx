@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { X, ArrowLeft, Smartphone, Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
+import { X, Smartphone, Mail, Lock, User as UserIcon, Loader2, Eye, EyeOff } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { useToast } from "@/context/ToastContext";
 import { fetchApi } from "@/lib/api";
@@ -26,7 +26,7 @@ export function AuthCard({
   initialMode = "login",
 }: AuthCardProps) {
   const { allUsers, loginUser } = useUser();
-  const { success, error, info } = useToast();
+  const { success, error } = useToast();
 
   // Mode: "login" | "signup"
   const [authMode, setAuthMode] = useState<"login" | "signup">(
@@ -34,34 +34,19 @@ export function AuthCard({
   );
   // Method: "phone" | "email"
   const [authMethod, setAuthMethod] = useState<"phone" | "email">("phone");
-  // Step: "input" | "otp"
-  const [step, setStep] = useState<"input" | "otp">("input");
 
   // Form Inputs
   const [phoneNumber, setPhoneNumber] = useState("");
   const [emailAddress, setEmailAddress] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
-  const [otpCode, setOtpCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Loading & State Handlers
-  const [isSendingOtp, setIsSendingOtp] = useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  // Loading & Error States
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [resendTimer, setResendTimer] = useState(30);
-
-  // Timer countdown for resend
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (step === "otp" && resendTimer > 0) {
-      timer = setTimeout(() => setResendTimer((t) => t - 1), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [step, resendTimer]);
 
   const handleClose = () => {
-    setStep("input");
-    setOtpCode("");
     setFormError(null);
     onClose?.();
   };
@@ -74,10 +59,11 @@ export function AuthCard({
     return emailAddress.trim().toLowerCase();
   };
 
-  const handleSendOtp = async () => {
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setFormError(null);
 
-    // Validate inputs
+    // 1. Validate Identifier
     if (authMethod === "phone") {
       const cleanDigits = phoneNumber.replace(/\D/g, "");
       if (cleanDigits.length < 10) {
@@ -96,6 +82,15 @@ export function AuthCard({
       }
     }
 
+    // 2. Validate Password
+    if (!password || password.trim().length === 0) {
+      const msg = "Please enter your password.";
+      setFormError(msg);
+      error(msg);
+      return;
+    }
+
+    // 3. Validate Signup Specifics
     if (authMode === "signup") {
       if (!fullName.trim()) {
         const msg = "Please enter your full name to create an account.";
@@ -103,8 +98,8 @@ export function AuthCard({
         error(msg);
         return;
       }
-      if (!password || password.length < 6) {
-        const msg = "Please enter a password with at least 6 characters.";
+      if (password.length < 6) {
+        const msg = "Password must be at least 6 characters long.";
         setFormError(msg);
         error(msg);
         return;
@@ -114,111 +109,76 @@ export function AuthCard({
     const identifier = getCleanIdentifier();
 
     try {
-      setIsSendingOtp(true);
-      const res = await fetchApi<{
-        success: boolean;
-        message: string;
-        identifier: string;
-      }>("/auth/send-otp", {
-        method: "POST",
-        body: JSON.stringify({
-          identifier,
-          type: authMethod,
-          purpose: authMode,
-        }),
-      });
+      setIsSubmitting(true);
 
-      setStep("otp");
-      setResendTimer(30);
-      setOtpCode("");
-      info(res.message || `Verification code sent via Twilio to ${identifier}`);
-    } catch (err: any) {
-      console.error("Failed to send OTP:", err);
-      const errMsg = err.message || "Failed to send verification code. Please try again.";
-      setFormError(errMsg);
-      error(errMsg);
-    } finally {
-      setIsSendingOtp(false);
-    }
-  };
+      if (authMode === "login") {
+        // Direct Password-Based Login (Zero OTP required)
+        const res = await fetchApi<{
+          success: boolean;
+          message: string;
+          user: User;
+        }>("/auth/login", {
+          method: "POST",
+          body: JSON.stringify({
+            identifier,
+            password: password.trim(),
+          }),
+        });
 
-  const handleVerifyOtp = async () => {
-    setFormError(null);
-    const entered = otpCode.trim();
+        if (res.user) {
+          loginUser(res.user);
+          success(res.message || `Welcome back, ${res.user.name}!`);
+          onSuccess?.();
+        }
+      } else {
+        // Direct Account Signup (Zero OTP required)
+        const res = await fetchApi<{
+          success: boolean;
+          message: string;
+          user: User;
+        }>("/auth/signup", {
+          method: "POST",
+          body: JSON.stringify({
+            name: fullName.trim(),
+            identifier,
+            password: password.trim(),
+          }),
+        });
 
-    if (entered.length < 4) {
-      const msg = "Please enter the 6-digit verification code.";
-      setFormError(msg);
-      error(msg);
-      return;
-    }
-
-    const identifier = getCleanIdentifier();
-
-    try {
-      setIsVerifyingOtp(true);
-      const res = await fetchApi<{
-        success: boolean;
-        message: string;
-        user: User;
-      }>("/auth/verify-otp", {
-        method: "POST",
-        body: JSON.stringify({
-          identifier,
-          code: entered,
-          purpose: authMode,
-          name: authMode === "signup" ? fullName.trim() : undefined,
-          password: authMode === "signup" ? password : undefined,
-        }),
-      });
-
-      if (res.user) {
-        loginUser(res.user);
-        success(res.message || `Welcome to AnywhereBnB, ${res.user.name}!`);
-        onSuccess?.();
+        if (res.user) {
+          loginUser(res.user);
+          success(res.message || `Account created successfully! Welcome to AnywhereBnB, ${res.user.name}!`);
+          onSuccess?.();
+        }
       }
     } catch (err: any) {
-      console.error("Failed to verify OTP:", err);
-      const errMsg = err.message || "Invalid or expired verification code.";
+      console.error("Auth submit failed:", err);
+      const errMsg = err.message || "Authentication failed. Please check your credentials.";
       setFormError(errMsg);
       error(errMsg);
     } finally {
-      setIsVerifyingOtp(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleSelectDemoUser = (user: User) => {
     loginUser(user);
-    success(`Switched to ${user.name}'s account (${user.role === "both" ? "Superhost" : user.role}).`);
+    success(`Logged in as ${user.name} (${user.role === "both" ? "Superhost" : user.role}).`);
     onSuccess?.();
   };
 
   return (
     <div
-      className="bg-white w-full max-w-[420px] rounded-[32px] shadow-2xl border border-neutral-200/80 p-8 relative animate-in zoom-in-95 duration-200"
+      className="bg-white dark:bg-[#1E1E1E] w-full max-w-[420px] rounded-[32px] shadow-2xl border border-neutral-200/80 dark:border-[#2F2F2F] p-8 relative animate-in zoom-in-95 duration-200"
       role="dialog"
       aria-modal="true"
     >
-      {/* Top Header Controls: Back Arrow & Close */}
-      {step === "otp" && (
-        <button
-          type="button"
-          onClick={() => {
-            setStep("input");
-            setFormError(null);
-          }}
-          aria-label="Back"
-          className="absolute top-6 left-6 w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-800 transition cursor-pointer"
-        >
-          <ArrowLeft className="w-5 h-5 stroke-[2]" />
-        </button>
-      )}
-
+      {/* Top Header Controls: Close Button */}
       {isPage ? (
         <Link
           href="/"
           aria-label="Back to home"
-          className="absolute top-6 right-6 w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-800 transition"
+          className="absolute top-6 right-6 w-8 h-8 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center text-neutral-800 dark:text-neutral-200 transition"
         >
           <X className="w-5 h-5 stroke-[2]" />
         </Link>
@@ -227,7 +187,7 @@ export function AuthCard({
           type="button"
           onClick={handleClose}
           aria-label="Close"
-          className="absolute top-6 right-6 w-8 h-8 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-800 transition cursor-pointer"
+          className="absolute top-6 right-6 w-8 h-8 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center text-neutral-800 dark:text-neutral-200 transition cursor-pointer"
         >
           <X className="w-5 h-5 stroke-[2]" />
         </button>
@@ -245,272 +205,202 @@ export function AuthCard({
         </svg>
       </div>
 
-      {step === "input" ? (
-        /* STEP 1: Phone / Email & Credentials Input Screen */
-        <div>
-          <h2 className="text-[24px] font-bold text-neutral-900 text-center tracking-tight mt-3 mb-1">
-            {title || (authMode === "login" ? "Log in to Anywherebnb" : "Sign up for Anywherebnb")}
-          </h2>
-          <p className="text-xs text-neutral-500 text-center mb-4 leading-relaxed">
-            {message ||
-              (authMode === "login"
-                ? "Welcome back! Enter your details for OTP verification."
-                : "Create your account with real OTP verification via Twilio.")}
-          </p>
+      <form onSubmit={handleSubmit}>
+        <h2 className="text-[24px] font-bold text-neutral-900 dark:text-neutral-100 text-center tracking-tight mt-3 mb-1">
+          {title || (authMode === "login" ? "Log in to Anywherebnb" : "Sign up for Anywherebnb")}
+        </h2>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 text-center mb-4 leading-relaxed">
+          {message ||
+            (authMode === "login"
+              ? "Welcome back! Enter your phone or email and password."
+              : "Create an account to start booking unforgettable stays.")}
+        </p>
 
-          {/* Log in / Sign up Mode Switcher */}
-          <div className="grid grid-cols-2 p-1 bg-neutral-100 rounded-xl mb-4 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode("login");
-                setFormError(null);
-              }}
-              className={`py-2 rounded-lg transition text-center cursor-pointer ${
-                authMode === "login"
-                  ? "bg-white text-neutral-900 shadow-xs"
-                  : "text-neutral-500 hover:text-neutral-900"
-              }`}
-            >
-              Log in
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode("signup");
-                setFormError(null);
-              }}
-              className={`py-2 rounded-lg transition text-center cursor-pointer ${
-                authMode === "signup"
-                  ? "bg-white text-neutral-900 shadow-xs"
-                  : "text-neutral-500 hover:text-neutral-900"
-              }`}
-            >
-              Sign up
-            </button>
-          </div>
-
-          {/* Form Error Banner */}
-          {formError && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-medium flex items-center gap-2 animate-in fade-in">
-              <span className="text-sm shrink-0">⚠️</span>
-              <span>{formError}</span>
-            </div>
-          )}
-
-          {/* Phone vs Email Switcher Tabs */}
-          <div className="flex bg-neutral-100 p-1 rounded-xl mb-4 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMethod("phone");
-                setFormError(null);
-              }}
-              className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                authMethod === "phone"
-                  ? "bg-white text-neutral-900 shadow-xs"
-                  : "text-neutral-500 hover:text-neutral-900"
-              }`}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Phone (SMS OTP)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMethod("email");
-                setFormError(null);
-              }}
-              className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                authMethod === "email"
-                  ? "bg-white text-neutral-900 shadow-xs"
-                  : "text-neutral-500 hover:text-neutral-900"
-              }`}
-            >
-              <Mail className="w-3.5 h-3.5" />
-              <span>Email (OTP)</span>
-            </button>
-          </div>
-
-          {/* Input Fields */}
-          <div className="space-y-3">
-            {/* Full Name for Signup */}
-            {authMode === "signup" && (
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 font-medium transition"
-                  required
-                />
-                <UserIcon className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              </div>
-            )}
-
-            {/* Phone or Email Input */}
-            {authMethod === "phone" ? (
-              <div className="flex items-center rounded-xl border border-neutral-300 focus-within:border-neutral-900 focus-within:ring-2 focus-within:ring-neutral-900 transition overflow-hidden">
-                <div className="bg-neutral-50 px-3.5 py-3 border-r border-neutral-300 flex items-center gap-1.5 text-sm font-semibold text-neutral-800 shrink-0 select-none">
-                  <span className="text-base leading-none">🇮🇳</span>
-                  <span>+91</span>
-                </div>
-                <input
-                  type="tel"
-                  placeholder="10-digit phone number"
-                  maxLength={10}
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                  className="w-full px-3.5 py-3 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-white font-medium"
-                />
-              </div>
-            ) : (
-              <div className="relative">
-                <input
-                  type="email"
-                  placeholder="name@example.com"
-                  value={emailAddress}
-                  onChange={(e) => setEmailAddress(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 font-medium transition"
-                />
-                <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              </div>
-            )}
-
-            {/* Password for Signup */}
-            {authMode === "signup" && (
-              <div className="relative">
-                <input
-                  type="password"
-                  placeholder="Create a password (min. 6 characters)"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 font-medium transition"
-                  required
-                />
-                <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              </div>
-            )}
-          </div>
-
-          {/* Send OTP Button */}
+        {/* Log in / Sign up Mode Switcher */}
+        <div className="grid grid-cols-2 p-1 bg-neutral-100 dark:bg-[#252525] rounded-xl mb-4 text-xs font-semibold">
           <button
             type="button"
-            disabled={isSendingOtp}
-            onClick={handleSendOtp}
-            className="w-full mt-4 py-3.5 rounded-xl bg-[#E00B41] hover:bg-[#D70466] disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white font-semibold text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
+            onClick={() => {
+              setAuthMode("login");
+              setFormError(null);
+            }}
+            className={`py-2 rounded-lg transition text-center cursor-pointer ${
+              authMode === "login"
+                ? "bg-white dark:bg-[#1E1E1E] text-neutral-900 dark:text-white shadow-xs"
+                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+            }`}
           >
-            {isSendingOtp ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Sending Twilio OTP...</span>
-              </>
-            ) : (
-              <span>{authMode === "login" ? "Send Login OTP" : "Send Verification OTP"}</span>
-            )}
+            Log in
           </button>
-
-          {/* "or" Divider */}
-          <div className="relative flex items-center justify-center my-4">
-            <div className="border-t border-neutral-200 w-full" />
-            <span className="bg-white px-3 text-xs text-neutral-400 font-normal absolute">
-              or quick demo
-            </span>
-          </div>
-
-          {/* Demo Persona Shortcuts */}
-          <div className="text-center">
-            <p className="text-[11px] text-neutral-400 mb-2">Switch to Demo Personas:</p>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              {allUsers.slice(0, 4).map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => handleSelectDemoUser(u)}
-                  className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition cursor-pointer"
-                >
-                  {u.name.split(" ")[0]} ({u.role === "both" ? "Superhost" : u.role})
-                </button>
-              ))}
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMode("signup");
+              setFormError(null);
+            }}
+            className={`py-2 rounded-lg transition text-center cursor-pointer ${
+              authMode === "signup"
+                ? "bg-white dark:bg-[#1E1E1E] text-neutral-900 dark:text-white shadow-xs"
+                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+            }`}
+          >
+            Sign up
+          </button>
         </div>
-      ) : (
-        /* STEP 2: Real Twilio OTP Verification Screen */
-        <div>
-          <h2 className="text-[24px] font-bold text-neutral-900 text-center tracking-tight mt-3 mb-1">
-            Confirm your {authMethod === "phone" ? "phone number" : "email"}
-          </h2>
-          <p className="text-xs text-neutral-500 text-center mb-5 leading-relaxed">
-            Enter the 6-digit verification code sent via Twilio to{" "}
-            <span className="font-semibold text-neutral-800">
-              {getCleanIdentifier()}
-            </span>
-          </p>
 
-          {/* Form Error Banner in OTP Step */}
-          {formError && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-medium flex items-center gap-2 animate-in fade-in">
-              <span className="text-sm shrink-0">⚠️</span>
-              <span>{formError}</span>
+        {/* Form Error Banner */}
+        {formError && (
+          <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-xl text-xs text-rose-800 dark:text-rose-300 font-medium flex items-center gap-2 animate-in fade-in">
+            <span className="text-sm shrink-0">⚠️</span>
+            <span>{formError}</span>
+          </div>
+        )}
+
+        {/* Phone vs Email Switcher Tabs */}
+        <div className="flex bg-neutral-100 dark:bg-[#252525] p-1 rounded-xl mb-4 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMethod("phone");
+              setFormError(null);
+            }}
+            className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              authMethod === "phone"
+                ? "bg-white dark:bg-[#1E1E1E] text-neutral-900 dark:text-white shadow-xs"
+                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+            }`}
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>Phone</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAuthMethod("email");
+              setFormError(null);
+            }}
+            className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              authMethod === "email"
+                ? "bg-white dark:bg-[#1E1E1E] text-neutral-900 dark:text-white shadow-xs"
+                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+            }`}
+          >
+            <Mail className="w-3.5 h-3.5" />
+            <span>Email</span>
+          </button>
+        </div>
+
+        {/* Form Inputs */}
+        <div className="space-y-3">
+          {/* Full Name for Signup */}
+          {authMode === "signup" && (
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 dark:border-[#3A3A3A] bg-white dark:bg-[#252525] text-neutral-900 dark:text-white text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 dark:focus:border-neutral-400 font-medium transition"
+                required
+              />
+              <UserIcon className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             </div>
           )}
 
-          {/* 6-digit OTP Input */}
-          <div className="relative mb-4">
+          {/* Phone or Email Input */}
+          {authMethod === "phone" ? (
+            <div className="flex items-center rounded-xl border border-neutral-300 dark:border-[#3A3A3A] bg-white dark:bg-[#252525] focus-within:border-neutral-900 dark:focus-within:border-neutral-400 focus-within:ring-1 focus-within:ring-neutral-900 transition overflow-hidden">
+              <div className="bg-neutral-50 dark:bg-[#2A2A2A] px-3.5 py-3 border-r border-neutral-300 dark:border-[#3A3A3A] flex items-center gap-1.5 text-sm font-semibold text-neutral-800 dark:text-neutral-200 shrink-0 select-none">
+                <span className="text-base leading-none">🇮🇳</span>
+                <span>+91</span>
+              </div>
+              <input
+                type="tel"
+                placeholder="10-digit phone number"
+                maxLength={10}
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                className="w-full px-3.5 py-3 text-sm text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none bg-transparent font-medium"
+                required
+              />
+            </div>
+          ) : (
+            <div className="relative">
+              <input
+                type="email"
+                placeholder="name@example.com"
+                value={emailAddress}
+                onChange={(e) => setEmailAddress(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-300 dark:border-[#3A3A3A] bg-white dark:bg-[#252525] text-neutral-900 dark:text-white text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 dark:focus:border-neutral-400 font-medium transition"
+                required
+              />
+              <Mail className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            </div>
+          )}
+
+          {/* Password Input (for both Login and Signup) */}
+          <div className="relative">
             <input
-              type="text"
-              autoFocus
-              placeholder="• • • • • •"
-              inputMode="numeric"
-              maxLength={6}
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-              onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
-              className="w-full text-center tracking-[0.5em] text-2xl font-mono font-bold px-4 py-3 rounded-xl border border-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-900 transition"
+              type={showPassword ? "text" : "password"}
+              placeholder={authMode === "login" ? "Enter your password" : "Create password (min. 6 characters)"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-10 pr-10 py-3 rounded-xl border border-neutral-300 dark:border-[#3A3A3A] bg-white dark:bg-[#252525] text-neutral-900 dark:text-white text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-900 dark:focus:border-neutral-400 font-medium transition"
+              required
             />
-          </div>
-
-          {/* Verify Button */}
-          <button
-            type="button"
-            disabled={isVerifyingOtp || otpCode.trim().length < 4}
-            onClick={handleVerifyOtp}
-            className="w-full py-3.5 rounded-xl bg-[#E00B41] hover:bg-[#D70466] disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white font-semibold text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
-          >
-            {isVerifyingOtp ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Verifying code...</span>
-              </>
-            ) : (
-              <span>{authMode === "signup" ? "Verify & Create Account" : "Verify & Log In"}</span>
-            )}
-          </button>
-
-          {/* Resend OTP */}
-          <div className="mt-4 text-center">
-            {resendTimer > 0 ? (
-              <p className="text-xs text-neutral-400">
-                Resend code in <span className="font-semibold text-neutral-700">{resendTimer}s</span>
-              </p>
-            ) : (
-              <button
-                type="button"
-                disabled={isSendingOtp}
-                onClick={handleSendOtp}
-                className="text-xs font-semibold text-neutral-900 hover:underline cursor-pointer"
-              >
-                {isSendingOtp ? "Sending code..." : "Resend code via Twilio"}
-              </button>
-            )}
+            <Lock className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition cursor-pointer"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
         </div>
-      )}
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full mt-5 py-3.5 rounded-xl bg-[#E00B41] hover:bg-[#D70466] disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99] text-white font-semibold text-sm transition shadow-sm cursor-pointer flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>{authMode === "login" ? "Logging in..." : "Creating account..."}</span>
+            </>
+          ) : (
+            <span>{authMode === "login" ? "Log in" : "Sign up"}</span>
+          )}
+        </button>
+      </form>
+
+      {/* "or" Divider */}
+      <div className="relative flex items-center justify-center my-4">
+        <div className="border-t border-neutral-200 dark:border-neutral-700 w-full" />
+        <span className="bg-white dark:bg-[#1E1E1E] px-3 text-xs text-neutral-400 font-normal absolute">
+          or 1-click demo login
+        </span>
+      </div>
+
+      {/* Demo Persona Shortcuts */}
+      <div className="text-center">
+        <p className="text-[11px] text-neutral-400 mb-2">Instant demo access:</p>
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {allUsers.slice(0, 4).map((u) => (
+            <button
+              key={u.id}
+              type="button"
+              onClick={() => handleSelectDemoUser(u)}
+              className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-[#2A2A2A] dark:hover:bg-[#333333] text-neutral-700 dark:text-neutral-300 transition cursor-pointer"
+            >
+              {u.name.split(" ")[0]} ({u.role === "both" ? "Superhost" : u.role})
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

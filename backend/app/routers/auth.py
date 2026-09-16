@@ -8,6 +8,8 @@ from app.schemas.auth import (
     SendOtpRequest,
     SendOtpResponse,
     VerifyOtpRequest,
+    PasswordLoginRequest,
+    DirectSignupRequest,
     AuthResponse,
 )
 from app.schemas.user import UserResponse
@@ -271,3 +273,109 @@ async def verify_otp(payload: VerifyOtpRequest, db: Session = Depends(get_db)):
         status_code=status.HTTP_400_BAD_REQUEST,
         detail="Invalid auth purpose specified.",
     )
+
+@router.post("/login", response_model=AuthResponse)
+async def login_with_password(payload: PasswordLoginRequest, db: Session = Depends(get_db)):
+    """
+    Direct password-based login for email or phone number.
+    Zero OTP required.
+    """
+    raw_id = payload.identifier.strip()
+    is_phone = raw_id.startswith("+") or raw_id.replace(" ", "").replace("-", "").isdigit()
+    clean_id = normalize_identifier(raw_id, "phone" if is_phone else "email")
+
+    user = (
+        db.query(User)
+        .filter((User.email == clean_id) | (User.phone == clean_id))
+        .first()
+    )
+    if not user and is_phone:
+        num_part = clean_id[-10:]
+        user = (
+            db.query(User)
+            .filter(User.phone.like(f"%{num_part}%"))
+            .first()
+        )
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No account found registered with '{raw_id}'. Please sign up first.",
+        )
+
+    entered_pw = payload.password.strip()
+
+    # If user already has a password set, verify match
+    if user.hashed_password:
+        if user.hashed_password != entered_pw:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect password. Please try again.",
+            )
+    else:
+        # If user (e.g. seeded demo user) has no password set yet, save the entered password
+        user.hashed_password = entered_pw
+        db.commit()
+
+    return AuthResponse(
+        success=True,
+        message=f"Welcome back, {user.name}!",
+        user=UserResponse.model_validate(user),
+    )
+
+@router.post("/signup", response_model=AuthResponse)
+async def signup_direct(payload: DirectSignupRequest, db: Session = Depends(get_db)):
+    """
+    Direct account creation with Name, Email/Phone, and Password.
+    Zero OTP required.
+    """
+    raw_id = payload.identifier.strip()
+    is_phone = raw_id.startswith("+") or raw_id.replace(" ", "").replace("-", "").isdigit()
+    clean_id = normalize_identifier(raw_id, "phone" if is_phone else "email")
+
+    # Check for duplicate user
+    existing = (
+        db.query(User)
+        .filter((User.email == clean_id) | (User.phone == clean_id))
+        .first()
+    )
+    if not existing and is_phone:
+        num_part = clean_id[-10:]
+        existing = db.query(User).filter(User.phone.like(f"%{num_part}%")).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email or phone number already exists. Please log in.",
+        )
+
+    now = get_utc_now()
+    if "@" in clean_id:
+        assigned_email = clean_id
+        assigned_phone = None
+    else:
+        digits = "".join(c for c in clean_id if c.isdigit())
+        assigned_email = f"{digits}@phone.anywherebnb.in"
+        assigned_phone = clean_id
+
+    new_user = User(
+        name=payload.name.strip(),
+        email=assigned_email,
+        phone=assigned_phone,
+        hashed_password=payload.password.strip(),
+        avatar_url="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
+        is_superhost=False,
+        role="guest",
+        joined_date=now,
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return AuthResponse(
+        success=True,
+        message=f"Account created successfully. Welcome to AnywhereBnB, {new_user.name}!",
+        user=UserResponse.model_validate(new_user),
+    )
+
